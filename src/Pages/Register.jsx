@@ -42,14 +42,28 @@ const Register = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault()
-    setError(null)
+    
+    // Validation
+    if (!formData.name || !formData.email || !formData.password) {
+      setError('Please fill in all fields')
+      return
+    }
+    
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters')
+      return
+    }
+    
     setIsSubmitting(true)
     try {
       await register(formData.name, formData.email, formData.password, formData.photoDataUrl)
-      const from = location.state?.from?.pathname || '/'
-      navigate(from, { replace: true })
+      // Small delay to ensure auth state updates
+      setTimeout(() => {
+        const from = location.state?.from?.pathname || '/'
+        navigate(from, { replace: true })
+      }, 300)
     } catch (err) {
-      setError(err.message || 'Failed to register')
+      console.error('Register error:', err)
     } finally {
       setIsSubmitting(false)
     }

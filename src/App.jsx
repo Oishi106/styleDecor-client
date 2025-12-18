@@ -1,12 +1,15 @@
 import './App.css'
 import { RouterProvider } from 'react-router-dom'
 import { AuthProvider } from './context/AuthProvider'
+import { BookingProvider } from './context/BookingProvider'
 import router from './Routes/Routes'
 
 function App() {
   return (
     <AuthProvider>
-      <RouterProvider router={router} />
+      <BookingProvider>
+        <RouterProvider router={router} />
+      </BookingProvider>
     </AuthProvider>
   )
 }

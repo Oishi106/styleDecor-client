@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { FaCheckCircle, FaCalendar, FaMapMarkerAlt, FaArrowRight, FaCreditCard } from 'react-icons/fa'
+import { useBooking } from '../context/BookingProvider'
 
 // Mock selected service
 const mockService = {
@@ -39,6 +40,7 @@ const Toast = ({ message, type, onClose }) => {
 
 const Booking = () => {
   const navigate = useNavigate()
+  const { addBooking } = useBooking()
   const [formData, setFormData] = useState({
     bookingDate: '',
     location: ''
@@ -69,13 +71,22 @@ const Booking = () => {
 
     // Simulate booking process
     setTimeout(() => {
+      // Add booking to context
+      const newBooking = addBooking({
+        service: mockService.service_name,
+        date: formData.bookingDate,
+        location: formData.location,
+        amount: `$${mockService.price}`,
+        decorator: 'Sarah Johnson'
+      })
+
       setToast({
         message: `✓ Booking confirmed for ${mockService.service_name}!`,
         type: 'success'
       })
 
       setTimeout(() => {
-        navigate('/payment')
+        navigate('/payment', { state: { booking: newBooking, service: mockService } })
       }, 2000)
     }, 1000)
   }

@@ -1,10 +1,15 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { FaCreditCard, FaLock, FaCheckCircle } from 'react-icons/fa'
+import { useBooking } from '../context/BookingProvider'
 
 const Payment = () => {
   const navigate = useNavigate()
+  const location = useLocation()
+  const { addPayment } = useBooking()
+  const { booking, service } = location.state || {}
+  
   const [paymentMethod, setPaymentMethod] = useState('credit-card')
   const [isProcessing, setIsProcessing] = useState(false)
   const [paymentSuccess, setPaymentSuccess] = useState(false)
@@ -15,9 +20,17 @@ const Payment = () => {
 
     // Simulate payment processing
     setTimeout(() => {
+      // Add payment to context
+      addPayment({
+        service: booking?.service || 'Living Room Makeover',
+        amount: booking?.amount || '$299',
+        method: paymentMethod === 'credit-card' ? 'Credit Card' : 
+                paymentMethod === 'paypal' ? 'PayPal' : 'Debit Card'
+      })
+
       setPaymentSuccess(true)
       setTimeout(() => {
-        navigate('/')
+        navigate('/dashboard/payments')
       }, 3000)
     }, 2000)
   }
@@ -41,13 +54,13 @@ const Payment = () => {
           </motion.div>
           <h1 className="text-4xl font-bold mb-4">Payment Successful!</h1>
           <p className="text-lg text-base-content/70 mb-8">
-            Your booking has been confirmed and paid. We'll contact you soon with more details.
+            Your booking has been confirmed and paid. Redirecting to payment history...
           </p>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/dashboard/payments')}
             className="btn btn-primary btn-lg w-full"
           >
-            Back to Home
+            View Payment History
           </button>
         </motion.div>
       </div>

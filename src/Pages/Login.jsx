@@ -1,14 +1,16 @@
 import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { FaEnvelope, FaLock, FaGoogle, FaFacebook } from 'react-icons/fa'
+import { FaEnvelope, FaLock, FaGoogle, FaFacebook, FaEye, FaEyeSlash } from 'react-icons/fa'
 import { useAuth } from '../context/AuthProvider'
 
 const Login = () => {
 	const navigate = useNavigate()
 	const location = useLocation()
-	const { login, loginWithGoogle, loginWithFacebook, setError, error, isMockAuth } = useAuth()
+	const { login, loginWithGoogle, loginWithFacebook, error, isMockAuth } = useAuth()
 	const [isSubmitting, setIsSubmitting] = useState(false)
+	const [showPassword, setShowPassword] = useState(false)
+	const [localError, setLocalError] = useState('')
 	const [formData, setFormData] = useState({
 		email: '',
 		password: ''
@@ -20,196 +22,263 @@ const Login = () => {
 			...prev,
 			[name]: value
 		}))
+		setLocalError('')
+	}
+
+	const validateEmail = (email) => {
+		const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+		return regex.test(email)
 	}
 
 	const handleLogin = async (e) => {
 		e.preventDefault()
-		setError(null)
+		setLocalError('')
+
+		// Validation
+		if (!formData.email || !formData.password) {
+			setLocalError('Please fill in all fields')
+			return
+		}
+
+		if (!validateEmail(formData.email)) {
+			setLocalError('Please enter a valid email address')
+			return
+		}
+
+		if (formData.password.length < 6) {
+			setLocalError('Password must be at least 6 characters')
+			return
+		}
+
 		setIsSubmitting(true)
 		try {
 			await login(formData.email, formData.password)
-			const from = location.state?.from?.pathname || '/'
-			navigate(from, { replace: true })
+			// Small delay to ensure auth state updates
+			setTimeout(() => {
+				const from = location.state?.from?.pathname || '/'
+				navigate(from, { replace: true })
+			}, 300)
 		} catch (err) {
-			setError(err.message || 'Failed to login')
+			setLocalError(err.message || 'Login failed. Please try again.')
 		} finally {
 			setIsSubmitting(false)
 		}
 	}
 
 	const handleSocialLogin = async (provider) => {
-		setError(null)
+		setLocalError('')
 		setIsSubmitting(true)
 		try {
-			if (provider === 'Google') await loginWithGoogle()
-			if (provider === 'Facebook') await loginWithFacebook()
-			const from = location.state?.from?.pathname || '/'
-			navigate(from, { replace: true })
+			let result
+			if (provider === 'Google') {
+				result = await loginWithGoogle()
+			} else if (provider === 'Facebook') {
+				result = await loginWithFacebook()
+			}
+
+			if (result && result.user) {
+				// Small delay to ensure auth state updates
+				setTimeout(() => {
+					const from = location.state?.from?.pathname || '/'
+					navigate(from, { replace: true })
+				}, 300)
+			}
 		} catch (err) {
-			setError(err.message || `Failed to login with ${provider}`)
+			const errorMsg = err.message || `${provider} login failed`
+			setLocalError(errorMsg)
+			console.error(`${provider} login error:`, err)
 		} finally {
 			setIsSubmitting(false)
 		}
 	}
 
+	const displayError = localError || error
+
 	return (
-		<div className="min-h-screen bg-gradient-to-br from-primary/10 via-base-100 to-secondary/10 flex items-center justify-center py-12 px-6">
-			<div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-				{/* Left Side - Branding */}
+		<div className="min-h-screen bg-gradient-to-br from-primary/5 via-base-100 to-secondary/5 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+			<div className="w-full max-w-md">
+				{/* Header */}
 				<motion.div
-					initial={{ opacity: 0, x: -50 }}
-					animate={{ opacity: 1, x: 0 }}
-					transition={{ duration: 0.6 }}
-					className="hidden lg:block text-center"
+					initial={{ opacity: 0, y: -20 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ duration: 0.5 }}
+					className="text-center mb-8"
 				>
-					<div className="mb-8">
-						<div className="inline-block bg-gradient-to-br from-primary to-secondary p-8 rounded-full mb-6">
-							<span className="text-6xl">🎨</span>
-						</div>
+					<div className="inline-block bg-gradient-to-br from-primary to-secondary p-4 rounded-full mb-4">
+						<span className="text-4xl">🎨</span>
 					</div>
-					<h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-						Welcome Back!
+					<h1 className="text-3xl lg:text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+						StyleDecor
 					</h1>
-					<p className="text-xl text-base-content/70 mb-8">
-						Sign in to continue your decoration journey with StyleDecor
+					<p className="text-sm lg:text-base text-base-content/70">
+						Transform your space with elegance
 					</p>
-					<div className="space-y-4 text-left max-w-md mx-auto">
-						<div className="flex items-center gap-3">
-							<div className="badge badge-primary">✓</div>
-							<span>Access your saved projects</span>
+				</motion.div>
+
+				{/* Login Card */}
+				<motion.div
+					initial={{ opacity: 0, y: 20 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ duration: 0.5, delay: 0.1 }}
+					className="card bg-base-100 shadow-xl border border-base-300"
+				>
+					<div className="card-body p-6 lg:p-8">
+						{/* Welcome Message */}
+						<div className="mb-6">
+							<h2 className="text-2xl lg:text-3xl font-bold mb-1">Welcome Back!</h2>
+							<p className="text-sm text-base-content/60">
+								Sign in to your account to continue
+							</p>
 						</div>
-						<div className="flex items-center gap-3">
-							<div className="badge badge-secondary">✓</div>
-							<span>Track your bookings</span>
+
+						{/* Error Alert */}
+						{displayError && (
+							<motion.div
+								initial={{ opacity: 0 }}
+								animate={{ opacity: 1 }}
+								className="alert alert-error mb-6 py-3"
+							>
+								<span className="text-sm">{displayError}</span>
+							</motion.div>
+						)}
+
+						{/* Mock Auth Notice */}
+						{isMockAuth && (
+							<div className="alert alert-info mb-6 py-3">
+								<span className="text-sm">
+									📝 Demo Mode: Use any email and password (min 6 chars) to login
+								</span>
+							</div>
+						)}
+
+						{/* Login Form */}
+						<form onSubmit={handleLogin} className="space-y-4">
+							{/* Email Input */}
+							<div className="form-control">
+								<label className="label pb-2">
+									<span className="label-text font-semibold text-base-content flex items-center gap-2">
+										<FaEnvelope className="text-primary" />
+										Email Address
+									</span>
+								</label>
+								<input
+									type="email"
+									name="email"
+									value={formData.email}
+									onChange={handleInputChange}
+									placeholder="you@example.com"
+									className="input input-bordered bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all"
+									disabled={isSubmitting}
+									autoComplete="email"
+								/>
+							</div>
+
+							{/* Password Input */}
+							<div className="form-control">
+								<label className="label pb-2">
+									<span className="label-text font-semibold text-base-content flex items-center gap-2">
+										<FaLock className="text-secondary" />
+										Password
+									</span>
+								</label>
+								<div className="relative">
+									<input
+										type={showPassword ? 'text' : 'password'}
+										name="password"
+										value={formData.password}
+										onChange={handleInputChange}
+										placeholder="••••••••"
+										className="input input-bordered bg-base-200 w-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all"
+										disabled={isSubmitting}
+										autoComplete="current-password"
+									/>
+									<button
+										type="button"
+										onClick={() => setShowPassword(!showPassword)}
+										className="absolute right-3 top-1/2 transform -translate-y-1/2 text-base-content/60 hover:text-base-content transition-colors"
+										tabIndex="-1"
+									>
+										{showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+									</button>
+								</div>
+								<label className="label pt-2">
+									<a href="#" className="label-text-alt link link-hover text-primary text-xs lg:text-sm">
+										Forgot password?
+									</a>
+								</label>
+							</div>
+
+							{/* Login Button */}
+							<button
+								type="submit"
+								className="btn btn-primary btn-lg w-full font-bold text-base lg:text-lg mt-6"
+								disabled={isSubmitting}
+							>
+								{isSubmitting ? (
+									<>
+										<span className="loading loading-spinner loading-sm"></span>
+										Logging in...
+									</>
+								) : (
+									'Sign In'
+								)}
+							</button>
+						</form>
+
+						{/* Divider */}
+						<div className="divider my-6 text-base-content/40">OR</div>
+
+						{/* Social Login Buttons */}
+						<div className="space-y-3">
+							<button
+								onClick={() => handleSocialLogin('Google')}
+								className="btn btn-outline w-full gap-2 hover:btn-error transition-all disabled:opacity-50 text-base"
+								disabled={isSubmitting}
+								title="Continue with Google"
+							>
+								{isSubmitting ? (
+									<span className="loading loading-spinner loading-sm"></span>
+								) : (
+									<FaGoogle className="text-lg" />
+								)}
+								Continue with Google
+							</button>
+
+							<button
+								onClick={() => handleSocialLogin('Facebook')}
+								className="btn btn-outline w-full gap-2 hover:btn-info transition-all disabled:opacity-50 text-base"
+								disabled={isSubmitting}
+								title="Continue with Facebook"
+							>
+								{isSubmitting ? (
+									<span className="loading loading-spinner loading-sm"></span>
+								) : (
+									<FaFacebook className="text-lg" />
+								)}
+								Continue with Facebook
+							</button>
 						</div>
-						<div className="flex items-center gap-3">
-							<div className="badge badge-accent">✓</div>
-							<span>Get personalized recommendations</span>
+
+						{/* Sign Up Link */}
+						<div className="text-center mt-8 pt-6 border-t border-base-300">
+							<p className="text-sm text-base-content/70">
+								Don't have an account?{' '}
+								<Link to="/register" className="link link-primary font-semibold hover:underline">
+									Create one now
+								</Link>
+							</p>
 						</div>
 					</div>
 				</motion.div>
 
-				{/* Right Side - Login Form */}
+				{/* Footer Info */}
 				<motion.div
-					initial={{ opacity: 0, x: 50 }}
-					animate={{ opacity: 1, x: 0 }}
-					transition={{ duration: 0.6, delay: 0.2 }}
+					initial={{ opacity: 0 }}
+					animate={{ opacity: 1 }}
+					transition={{ delay: 0.3 }}
+					className="text-center mt-6 text-xs text-base-content/50"
 				>
-					<div className="card bg-base-100 shadow-2xl">
-						<div className="card-body p-8 lg:p-12">
-							<h2 className="text-4xl font-bold mb-2 text-center">Login</h2>
-							<p className="text-center text-base-content/60 mb-4">
-								Enter your credentials to access your account
-							</p>
-							{isMockAuth && (
-								<div className="alert alert-info text-sm mb-4">
-									<span>Running in mock auth mode (no Firebase keys set). Any email/password will sign you in locally.</span>
-								</div>
-							)}
-
-							{error && (
-								<div className="alert alert-error text-sm">
-									<span>{error}</span>
-								</div>
-							)}
-
-							<form onSubmit={handleLogin} className="space-y-6">
-								{/* Email Input */}
-								<div className="form-control">
-									<label className="label">
-										<span className="label-text font-semibold flex items-center gap-2">
-											<FaEnvelope className="text-primary" />
-											Email Address
-										</span>
-									</label>
-									<input
-										type="email"
-										name="email"
-										value={formData.email}
-										onChange={handleInputChange}
-										placeholder="Enter your email"
-										className="input input-bordered bg-base-200 focus:input-primary transition-all"
-									/>
-								</div>
-
-								{/* Password Input */}
-								<div className="form-control">
-									<label className="label">
-										<span className="label-text font-semibold flex items-center gap-2">
-											<FaLock className="text-secondary" />
-											Password
-										</span>
-									</label>
-									<input
-										type="password"
-										name="password"
-										value={formData.password}
-										onChange={handleInputChange}
-										placeholder="Enter your password"
-										className="input input-bordered bg-base-200 focus:input-primary transition-all"
-									/>
-									<label className="label">
-										<a href="#" className="label-text-alt link link-hover text-primary">
-											Forgot password?
-										</a>
-									</label>
-								</div>
-
-								{/* Login Button */}
-								<button type="submit" className="btn btn-primary btn-lg w-full font-bold" disabled={isSubmitting}>
-									{isSubmitting ? 'Logging in...' : 'Login'}
-								</button>
-							</form>
-
-							{/* Divider */}
-							<div className="divider my-8">OR</div>
-
-							{/* Social Login Buttons */}
-							<div className="space-y-3">
-								<button
-									onClick={() => handleSocialLogin('Google')}
-									className="btn btn-outline w-full gap-2 hover:btn-error transition-all"
-									disabled={isSubmitting}
-								>
-									<FaGoogle className="text-xl" />
-									Continue with Google
-								</button>
-                
-								<button
-									onClick={() => handleSocialLogin('Facebook')}
-									className="btn btn-outline w-full gap-2 hover:btn-info transition-all"
-									disabled={isSubmitting}
-								>
-									<FaFacebook className="text-xl" />
-									Continue with Facebook
-								</button>
-							</div>
-
-							{/* Sign Up Link */}
-							<div className="text-center mt-8">
-								<p className="text-base-content/70">
-									Don't have an account?{' '}
-									<Link to="/register" className="link link-primary font-semibold">
-										Sign Up
-									</Link>
-								</p>
-							</div>
-						</div>
-					</div>
-
-					{/* Mobile Branding */}
-					<motion.div
-						initial={{ opacity: 0, y: 20 }}
-						animate={{ opacity: 1, y: 0 }}
-						transition={{ delay: 0.4 }}
-						className="lg:hidden text-center mt-6"
-					>
-						{isMockAuth ? (
-							<p className="text-sm text-base-content/60">
-								Mock auth is active. Add Firebase keys to enable real login.
-							</p>
-						) : null}
-					</motion.div>
+					<p>By signing in, you agree to our Terms of Service and Privacy Policy</p>
 				</motion.div>
 			</div>
 		</div>
@@ -217,4 +286,3 @@ const Login = () => {
 }
 
 export default Login
-
