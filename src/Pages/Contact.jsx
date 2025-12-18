@@ -79,7 +79,7 @@ const Contact = () => {
                     </span>
                     <div>
                       <p className="font-semibold">Phone</p>
-                      <a href="tel:+8801700000000" className="text-sm link">+880 1700-000000</a>
+                      <a href="tel:+8801700000000" className="text-sm link">+880 ****-******</a>
                     </div>
                   </li>
                   <li className="flex gap-3">
@@ -135,24 +135,24 @@ const Contact = () => {
             <div className="card bg-base-100 shadow-xl">
               <div className="card-body">
                 <h2 className="card-title">Send us a message</h2>
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                <form onSubmit={handleSubmit} className="space-y-4 mt-2">
                   <div className="form-control">
-                    <label className="label"><span className="label-text font-semibold">Name</span></label>
+                    <label className="label "><span className="label-text mr-8 font-semibold">Name :</span></label>
                     <input name="name" value={formData.name} onChange={handleChange} className="input input-bordered bg-base-200" placeholder="Your name" />
                   </div>
                   <div className="form-control">
-                    <label className="label"><span className="label-text font-semibold">Email</span></label>
+                    <label className="label"><span className="label-text mr-9 font-semibold">Email :</span></label>
                     <input type="email" name="email" value={formData.email} onChange={handleChange} className="input input-bordered bg-base-200" placeholder="you@example.com" />
                   </div>
-                  <div className="form-control md:col-span-2">
-                    <label className="label"><span className="label-text font-semibold">Subject</span></label>
+                  <div className="form-control">
+                    <label className="label"><span className="label-text mr-6 font-semibold">Subject : </span></label>
                     <input name="subject" value={formData.subject} onChange={handleChange} className="input input-bordered bg-base-200" placeholder="How can we help?" />
                   </div>
-                  <div className="form-control md:col-span-2">
-                    <label className="label"><span className="label-text font-semibold">Message</span></label>
-                    <textarea name="message" value={formData.message} onChange={handleChange} className="textarea textarea-bordered bg-base-200 min-h-32" placeholder="Write your message..."></textarea>
+                  <div className="form-control">
+                    <label className="label"><span className="label-text mr-4 font-semibold">Message : </span></label>
+                    <textarea name="message" value={formData.message} onChange={handleChange} className="textarea textarea-bordered bg-base-200 min-h-40" placeholder="Write your message..."></textarea>
                   </div>
-                  <div className="md:col-span-2 flex justify-end mt-2">
+                  <div className="flex justify-end mt-2">
                     <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
                       {isSubmitting ? 'Sending...' : 'Send Message'}
                     </button>
