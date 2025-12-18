@@ -13,6 +13,7 @@ import CoverageMap from '../Pages/CoverageMap'
 import Register from '../Pages/Register'
 import PrivateRoutes from './PrivateRoutes'
 import Login from '../Pages/Login'
+import Profile from '../Pages/Profile'
 
 const DashboardPlaceholder = () => <div>Dashboard coming soon</div>
 
@@ -74,6 +75,14 @@ const router = createBrowserRouter([
             {
                 path: 'login',
                 element: <Login />,
+            },
+            {
+                path: 'profile',
+                element: (
+                    <PrivateRoutes>
+                        <Profile />
+                    </PrivateRoutes>
+                ),
             },
             {
                 path: '*',

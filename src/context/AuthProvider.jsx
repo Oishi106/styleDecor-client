@@ -63,9 +63,7 @@ export const AuthProvider = ({ children }) => {
     if (firebaseReady && auth && googleProvider) {
       return signInWithPopup(auth, googleProvider)
     }
-    const mockUser = { uid: 'mock-' + Math.random().toString(36).slice(2), email: 'mock.google@example.com', displayName: 'Mock Google User', providerData: [{ providerId: 'google.com' }] }
-    setUser(mockUser)
-    return mockUser
+    throw new Error('Google login requires Firebase configuration')
   }
 
   const loginWithFacebook = async () => {

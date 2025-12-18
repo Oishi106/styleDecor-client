@@ -122,6 +122,7 @@ const Navbar = () => {
                             >
                                 <li className="menu-title">Account</li>
                                 <li><a>{user.displayName || user.email}</a></li>
+                                <li><Link to="/profile">My Profile</Link></li>
                                 <li><Link to="/dashboard">Dashboard</Link></li>
                                 <li><button onClick={logout}>Logout</button></li>
                             </ul>
