@@ -1,5 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../context/AuthProvider'
 
 const navLinks = [
     { name: 'Home', to: '/' },
@@ -9,6 +10,8 @@ const navLinks = [
 ]
 
 const Navbar = () => {
+    const { user, logout } = useAuth()
+
     const renderLinks = () => (
         navLinks.map((link) => (
             <li key={link.name}>
@@ -40,23 +43,37 @@ const Navbar = () => {
                             className="menu menu-sm dropdown-content mt-3 w-56 rounded-box bg-base-100 p-3 shadow z-10"
                         >
                             {renderLinks()}
-                            <li className="mt-2">
-                                <Link to="/dashboard" className="btn btn-primary btn-sm justify-center">
-                                    Dashboard
-                                </Link>
-                            </li>
-                            <li className="mt-2">
-                                <Link to="/login" className="btn btn-outline btn-sm justify-center">
-                                    Login
-                                </Link>
-                            </li>
+                            {user ? (
+                                <>
+                                    <li className="mt-2">
+                                        <Link to="/dashboard" className="btn btn-primary btn-sm justify-center">
+                                            Dashboard
+                                        </Link>
+                                    </li>
+                                    <li className="mt-2">
+                                        <button onClick={logout} className="btn btn-outline btn-sm justify-center">
+                                            Logout
+                                        </button>
+                                    </li>
+                                </>
+                            ) : (
+                                <li className="mt-2">
+                                    <Link to="/login" className="btn btn-outline btn-sm justify-center">
+                                        Login
+                                    </Link>
+                                </li>
+                            )}
                             <li className="mt-2">
                                 <details>
                                     <summary className="font-medium">Account</summary>
                                     <ul className="p-2 bg-base-100">
                                         <li><a>Profile</a></li>
                                         <li><a>Settings</a></li>
-                                        <li><a>Logout</a></li>
+                                        {user ? (
+                                            <li><button onClick={logout}>Logout</button></li>
+                                        ) : (
+                                            <li><Link to="/login">Login</Link></li>
+                                        )}
                                     </ul>
                                 </details>
                             </li>
@@ -77,26 +94,40 @@ const Navbar = () => {
                 </div>
 
                 <div className="navbar-end gap-3">
-                    <Link to="/login" className="btn btn-outline btn-sm">
-                        Login
-                    </Link>
-                    <Link to="/dashboard" className="btn btn-primary btn-sm">
-                        Dashboard
-                    </Link>
-                    <div className="dropdown dropdown-end">
-                        <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar placeholder">
-                            <div className="bg-neutral text-neutral-content w-10">SD</div>
+                    {!user && (
+                        <Link to="/login" className="btn btn-outline btn-sm">
+                            Login
+                        </Link>
+                    )}
+                    {user && (
+                        <Link to="/dashboard" className="btn btn-primary btn-sm">
+                            Dashboard
+                        </Link>
+                    )}
+                    {user ? (
+                        <div className="dropdown dropdown-end">
+                            <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
+                                {user.photoURL ? (
+                                    <div className="w-10 rounded-full">
+                                        <img alt="avatar" src={user.photoURL} />
+                                    </div>
+                                ) : (
+                                    <div className="bg-neutral text-neutral-content w-10 rounded-full flex items-center justify-center">
+                                        {(user.displayName?.[0] || user.email?.[0] || 'U').toUpperCase()}
+                                    </div>
+                                )}
+                            </div>
+                            <ul
+                                tabIndex={0}
+                                className="menu menu-sm dropdown-content mt-3 w-52 rounded-box bg-base-100 p-3 shadow z-10"
+                            >
+                                <li className="menu-title">Account</li>
+                                <li><a>{user.displayName || user.email}</a></li>
+                                <li><Link to="/dashboard">Dashboard</Link></li>
+                                <li><button onClick={logout}>Logout</button></li>
+                            </ul>
                         </div>
-                        <ul
-                            tabIndex={0}
-                            className="menu menu-sm dropdown-content mt-3 w-52 rounded-box bg-base-100 p-3 shadow z-10"
-                        >
-                            <li className="menu-title">Account</li>
-                            <li><a>Profile</a></li>
-                            <li><a>Settings</a></li>
-                            <li><a>Logout</a></li>
-                        </ul>
-                    </div>
+                    ) : null}
                 </div>
             </div>
         </div>

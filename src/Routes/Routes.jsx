@@ -10,6 +10,7 @@ import ServiceDetails from '../Pages/ServiceDetails'
 import Booking from '../Pages/Booking'
 import Payment from '../Pages/Payment'
 import CoverageMap from '../Pages/CoverageMap'
+import PrivateRoutes from './PrivateRoutes'
 import Login from '../Pages/Login'
 
 const DashboardPlaceholder = () => <div>Dashboard coming soon</div>
@@ -47,11 +48,19 @@ const router = createBrowserRouter([
             },
             {
                 path: 'booking',
-                element: <Booking />,
+                element: (
+                    <PrivateRoutes>
+                        <Booking />
+                    </PrivateRoutes>
+                ),
             },
             {
                 path: 'payment',
-                element: <Payment />,
+                element: (
+                    <PrivateRoutes>
+                        <Payment />
+                    </PrivateRoutes>
+                ),
             },
             {
                 path: 'coverage',
