@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { FaStar, FaArrowLeft, FaCalendar, FaMapMarkerAlt, FaUser, FaEnvelope } from 'react-icons/fa'
+import { FaStar, FaArrowLeft } from 'react-icons/fa'
 
 // Mock service data
 const allServices = [
@@ -154,13 +154,6 @@ const allServices = [
 const ServiceDetails = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [showBookingModal, setShowBookingModal] = useState(false)
-  const [formData, setFormData] = useState({
-    name: 'John Doe',
-    email: 'john@example.com',
-    bookingDate: '',
-    location: ''
-  })
 
   const service = allServices.find(s => s.id === parseInt(id))
 
@@ -175,15 +168,6 @@ const ServiceDetails = () => {
         </div>
       </div>
     )
-  }
-
-  const handleBooking = (e) => {
-    e.preventDefault()
-    console.log('Booking submitted:', formData)
-    // Show success message
-    alert(`Booking request submitted!\n\nName: ${formData.name}\nEmail: ${formData.email}\nDate: ${formData.bookingDate}\nLocation: ${formData.location}`)
-    setShowBookingModal(false)
-    setFormData({ name: 'John Doe', email: 'john@example.com', bookingDate: '', location: '' })
   }
 
   return (
@@ -276,7 +260,7 @@ const ServiceDetails = () => {
             {/* Book Now Button */}
             <div className="card-actions justify-end">
               <button
-                onClick={() => setShowBookingModal(true)}
+                onClick={() => navigate('/booking')}
                 className="btn btn-primary btn-lg gap-2 font-bold"
               >
                 Book Now
@@ -285,114 +269,6 @@ const ServiceDetails = () => {
           </div>
         </motion.div>
       </div>
-
-      {/* Booking Modal */}
-      {showBookingModal && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={() => setShowBookingModal(false)}
-        >
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            onClick={(e) => e.stopPropagation()}
-            className="card bg-base-100 shadow-2xl max-w-lg w-full"
-          >
-            <div className="card-body p-8">
-              <h2 className="text-3xl font-bold mb-6">Book {service.service_name}</h2>
-
-              <form onSubmit={handleBooking} className="space-y-5">
-                {/* Name Field */}
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-semibold flex items-center gap-2">
-                      <FaUser className="text-primary" />
-                      Name
-                    </span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="input input-bordered bg-base-200"
-                    required
-                  />
-                </div>
-
-                {/* Email Field */}
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-semibold flex items-center gap-2">
-                      <FaEnvelope className="text-secondary" />
-                      Email
-                    </span>
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="input input-bordered bg-base-200"
-                    required
-                  />
-                </div>
-
-                {/* Booking Date Field */}
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-semibold flex items-center gap-2">
-                      <FaCalendar className="text-accent" />
-                      Preferred Date
-                    </span>
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.bookingDate}
-                    onChange={(e) => setFormData({ ...formData, bookingDate: e.target.value })}
-                    className="input input-bordered bg-base-200"
-                    required
-                  />
-                </div>
-
-                {/* Location Field */}
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-semibold flex items-center gap-2">
-                      <FaMapMarkerAlt className="text-warning" />
-                      Location
-                    </span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Enter your address"
-                    value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    className="input input-bordered bg-base-200"
-                    required
-                  />
-                </div>
-
-                {/* Buttons */}
-                <div className="card-actions justify-between gap-4 mt-8">
-                  <button
-                    type="button"
-                    onClick={() => setShowBookingModal(false)}
-                    className="btn btn-outline btn-neutral"
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary btn-lg">
-                    Confirm Booking
-                  </button>
-                </div>
-              </form>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
     </div>
   )
 }

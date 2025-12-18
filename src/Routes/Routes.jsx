@@ -7,6 +7,8 @@ import About from '../Pages/About'
 import Contact from '../Pages/Contact'
 import ServicePage from '../Pages/ServicePage'
 import ServiceDetails from '../Pages/ServiceDetails'
+import Booking from '../Pages/Booking'
+import Payment from '../Pages/Payment'
 
 const DashboardPlaceholder = () => <div>Dashboard coming soon</div>
 
@@ -40,6 +42,14 @@ const router = createBrowserRouter([
             {
                 path: 'dashboard',
                 element: <DashboardPlaceholder />,
+            },
+            {
+                path: 'booking',
+                element: <Booking />,
+            },
+            {
+                path: 'payment',
+                element: <Payment />,
             },
             {
                 path: '*',
