@@ -77,6 +77,9 @@ const CoverageMap = () => {
                 zoom={7}
                 style={{ height: '100%', width: '100%' }}
                 scrollWheelZoom={true}
+                maxBounds={[[20.5, 87.5], [26.8, 92.8]]}
+                maxBoundsViscosity={1.0}
+                minZoom={7}
               >
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
