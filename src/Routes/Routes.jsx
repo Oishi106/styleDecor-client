@@ -10,6 +10,7 @@ import ServiceDetails from '../Pages/ServiceDetails'
 import Booking from '../Pages/Booking'
 import Payment from '../Pages/Payment'
 import CoverageMap from '../Pages/CoverageMap'
+import Register from '../Pages/Register'
 import PrivateRoutes from './PrivateRoutes'
 import Login from '../Pages/Login'
 
@@ -65,6 +66,10 @@ const router = createBrowserRouter([
             {
                 path: 'coverage',
                 element: <CoverageMap />,
+            },
+            {
+                path: 'register',
+                element: <Register />,
             },
             {
                 path: 'login',
