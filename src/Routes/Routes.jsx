@@ -10,6 +10,7 @@ import ServiceDetails from '../Pages/ServiceDetails'
 import Booking from '../Pages/Booking'
 import Payment from '../Pages/Payment'
 import CoverageMap from '../Pages/CoverageMap'
+import Login from '../Pages/Login'
 
 const DashboardPlaceholder = () => <div>Dashboard coming soon</div>
 
@@ -55,6 +56,10 @@ const router = createBrowserRouter([
             {
                 path: 'coverage',
                 element: <CoverageMap />,
+            },
+            {
+                path: 'login',
+                element: <Login />,
             },
             {
                 path: '*',

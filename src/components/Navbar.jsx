@@ -46,6 +46,11 @@ const Navbar = () => {
                                 </Link>
                             </li>
                             <li className="mt-2">
+                                <Link to="/login" className="btn btn-outline btn-sm justify-center">
+                                    Login
+                                </Link>
+                            </li>
+                            <li className="mt-2">
                                 <details>
                                     <summary className="font-medium">Account</summary>
                                     <ul className="p-2 bg-base-100">
@@ -72,6 +77,9 @@ const Navbar = () => {
                 </div>
 
                 <div className="navbar-end gap-3">
+                    <Link to="/login" className="btn btn-outline btn-sm">
+                        Login
+                    </Link>
                     <Link to="/dashboard" className="btn btn-primary btn-sm">
                         Dashboard
                     </Link>
