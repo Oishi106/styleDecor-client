@@ -108,14 +108,8 @@ const Register = () => {
           <div className="card bg-base-100 shadow-2xl">
             <div className="card-body p-8 lg:p-12">
               <h2 className="text-4xl font-bold mb-2 text-center">Create Account</h2>
-              <p className="text-center text-base-content/60 mb-4">
-                It takes less than a minute
-              </p>
-              {isMockAuth && (
-                <div className="alert alert-info text-sm mb-4">
-                  <span>Mock auth mode: registration will create a local session only.</span>
-                </div>
-              )}
+            
+             
               {error && (
                 <div className="alert alert-error text-sm mb-4">
                   <span>{error}</span>

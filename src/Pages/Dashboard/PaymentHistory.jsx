@@ -1,73 +1,10 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { motion } from 'framer-motion'
 import { FaDollarSign, FaCalendarAlt, FaCheckCircle, FaClock, FaTimesCircle, FaDownload, FaFilter } from 'react-icons/fa'
+import { useBooking } from '../../context/BookingProvider'
 
 const PaymentHistory = () => {
-	const [payments] = useState([
-		{
-			id: 'PAY-001',
-			service: 'Living Room Makeover',
-			amount: '$450',
-			date: '2025-12-15',
-			status: 'Completed',
-			method: 'Credit Card',
-			transactionId: 'TXN-45678901'
-		},
-		{
-			id: 'PAY-002',
-			service: 'Bedroom Interior Design',
-			amount: '$680',
-			date: '2025-12-10',
-			status: 'Completed',
-			method: 'PayPal',
-			transactionId: 'TXN-45678902'
-		},
-		{
-			id: 'PAY-003',
-			service: 'Kitchen Renovation',
-			amount: '$1,200',
-			date: '2025-12-05',
-			status: 'Completed',
-			method: 'Debit Card',
-			transactionId: 'TXN-45678903'
-		},
-		{
-			id: 'PAY-004',
-			service: 'Office Space Design',
-			amount: '$890',
-			date: '2025-12-01',
-			status: 'Pending',
-			method: 'Credit Card',
-			transactionId: 'TXN-45678904'
-		},
-		{
-			id: 'PAY-005',
-			service: 'Bathroom Remodeling',
-			amount: '$520',
-			date: '2025-11-28',
-			status: 'Failed',
-			method: 'Credit Card',
-			transactionId: 'TXN-45678905'
-		},
-		{
-			id: 'PAY-006',
-			service: 'Garden Decoration',
-			amount: '$350',
-			date: '2025-11-20',
-			status: 'Completed',
-			method: 'PayPal',
-			transactionId: 'TXN-45678906'
-		},
-		{
-			id: 'PAY-007',
-			service: 'Dining Room Setup',
-			amount: '$420',
-			date: '2025-11-15',
-			status: 'Completed',
-			method: 'Debit Card',
-			transactionId: 'TXN-45678907'
-		}
-	])
+	const { payments } = useBooking()
 
 	const getStatusBadge = (status) => {
 		switch (status) {

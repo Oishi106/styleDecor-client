@@ -142,14 +142,7 @@ const Login = () => {
 							</motion.div>
 						)}
 
-						{/* Mock Auth Notice */}
-						{isMockAuth && (
-							<div className="alert alert-info mb-6 py-3">
-								<span className="text-sm">
-									📝 Demo Mode: Use any email and password (min 6 chars) to login
-								</span>
-							</div>
-						)}
+					
 
 						{/* Login Form */}
 						<form onSubmit={handleLogin} className="space-y-4">
@@ -264,7 +257,7 @@ const Login = () => {
 							<p className="text-sm text-base-content/70">
 								Don't have an account?{' '}
 								<Link to="/register" className="link link-primary font-semibold hover:underline">
-									Create one now
+									Register Now
 								</Link>
 							</p>
 						</div>

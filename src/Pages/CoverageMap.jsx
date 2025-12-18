@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { motion } from 'framer-motion'
 import L from 'leaflet'
+import { useNavigate } from 'react-router-dom'
 
 // Fix for default marker icon issue in React Leaflet
 delete L.Icon.Default.prototype._getIconUrl
@@ -12,41 +13,47 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 })
 
-// Coverage locations in Bangladesh
+// Coverage locations worldwide
 const coverageLocations = [
   {
     id: 1,
-    name: 'Dhaka',
-    position: [23.8103, 90.4125],
-    description: 'Capital city - Full service coverage available'
+    name: 'Bangladesh',
+    position: [23.6850, 90.3563],
+    description: 'Primary service region - Full coverage available'
   },
   {
     id: 2,
-    name: 'Chittagong',
-    position: [22.3569, 91.7832],
-    description: 'Port city - All decoration services available'
+    name: 'India',
+    position: [20.5937, 78.9629],
+    description: 'Expanding services available'
   },
   {
     id: 3,
-    name: 'Sylhet',
-    position: [24.8949, 91.8687],
-    description: 'Tea capital - Premium services available'
+    name: 'Pakistan',
+    position: [30.3753, 69.3451],
+    description: 'Limited services available'
   },
   {
     id: 4,
-    name: 'Rajshahi',
-    position: [24.3745, 88.6042],
-    description: 'Silk city - Select services available'
+    name: 'UAE',
+    position: [23.4241, 53.8478],
+    description: 'Premium services available'
   },
   {
     id: 5,
-    name: 'Khulna',
-    position: [22.8456, 89.5403],
-    description: 'Gateway to Sundarbans - Full coverage'
+    name: 'Thailand',
+    position: [15.8700, 100.9925],
+    description: 'Select services available'
   }
 ]
 
 const CoverageMap = () => {
+  const navigate = useNavigate()
+
+  const handleContactClick = () => {
+    navigate('/contact')
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-base-100 via-primary/5 to-secondary/5 py-12 px-6 lg:px-12">
       <div className="max-w-7xl mx-auto">
@@ -57,9 +64,9 @@ const CoverageMap = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <h1 className="text-5xl font-bold mb-3">Service Coverage Map</h1>
+          <h1 className="text-5xl font-bold mb-3">Global Service Coverage</h1>
           <p className="text-lg text-base-content/60 max-w-2xl mx-auto">
-            We provide professional decoration services across major cities in Bangladesh
+            We provide professional decoration services worldwide with expanding reach
           </p>
         </motion.div>
 
@@ -69,17 +76,15 @@ const CoverageMap = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
           className="card bg-base-100 shadow-2xl overflow-hidden"
+          style={{ position: 'relative', zIndex: 10 }}
         >
           <div className="card-body p-0">
-            <div style={{ height: '600px', width: '100%' }}>
+            <div style={{ height: '600px', width: '100%', position: 'relative' }}>
               <MapContainer
-                center={[23.8103, 90.4125]}
-                zoom={7}
-                style={{ height: '100%', width: '100%' }}
+                center={[20, 50]}
+                zoom={3}
+                style={{ height: '100%', width: '100%', position: 'relative', zIndex: 1 }}
                 scrollWheelZoom={true}
-                maxBounds={[[20.5, 87.5], [26.8, 92.8]]}
-                maxBoundsViscosity={1.0}
-                minZoom={7}
               >
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -136,7 +141,7 @@ const CoverageMap = () => {
           <p className="text-lg text-base-content/70 mb-6 max-w-2xl mx-auto">
             We're expanding our services! Contact us to check if we can serve your location.
           </p>
-          <button className="btn btn-primary btn-lg mx-auto">
+          <button className="btn btn-primary btn-lg mx-auto" onClick={handleContactClick}>
             Contact Us
           </button>
         </motion.div>
