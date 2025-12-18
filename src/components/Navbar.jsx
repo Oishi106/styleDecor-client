@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthProvider'
+import { FaShieldAlt } from 'react-icons/fa'
 
 const navLinks = [
     { name: 'Home', to: '/' },
@@ -23,7 +24,7 @@ const Navbar = () => {
     )
 
     return (
-        <div className="bg-base-100 shadow-sm">
+        <div className="fixed top-0 left-0 right-0 z-50 bg-base-100/90 backdrop-blur shadow-sm">
             <div className="navbar w-full px-4 lg:px-8">
                 <div className="navbar-start">
                     <div className="dropdown">
@@ -80,9 +81,7 @@ const Navbar = () => {
                         </ul>
                     </div>
                     <Link to="/" className="btn btn-ghost gap-2 px-0 normal-case text-xl">
-                        <div className="avatar placeholder">
-                            <div className="w-9 rounded-full bg-primary text-primary-content">SD</div>
-                        </div>
+                        <FaShieldAlt className="text-primary text-2xl" />
                         <span className="font-semibold tracking-tight">StyleDecor</span>
                     </Link>
                 </div>
