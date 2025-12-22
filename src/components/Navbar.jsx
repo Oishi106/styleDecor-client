@@ -82,7 +82,7 @@ const Navbar = () => {
                     </div>
                     <Link to="/" className="btn btn-ghost gap-2 px-0 normal-case text-xl">
                         <FaShieldAlt className="text-primary text-2xl" />
-                        <span className="font-semibold tracking-tight">StyleDecor</span>
+                        <span className="font-bold text-2xl tracking-tight">StyleDecor</span>
                     </Link>
                 </div>
 

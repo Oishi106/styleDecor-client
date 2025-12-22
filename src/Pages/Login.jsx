@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { FaEnvelope, FaLock, FaGoogle, FaFacebook, FaEye, FaEyeSlash } from 'react-icons/fa'
 import { useAuth } from '../context/AuthProvider'
+import { storeUserInDatabase } from '../api/userApi'
 
 const Login = () => {
 	const navigate = useNavigate()
@@ -53,6 +54,19 @@ const Login = () => {
 		setIsSubmitting(true)
 		try {
 			await login(formData.email, formData.password)
+			
+			// Store user info in database
+			const userData = {
+				email: formData.email,
+				lastLogin: new Date().toISOString()
+			}
+			try {
+				await storeUserInDatabase(userData)
+			} catch (dbError) {
+				console.warn('Failed to store user in database:', dbError)
+				// Continue with login even if database storage fails
+			}
+			
 			// Small delay to ensure auth state updates
 			setTimeout(() => {
 				const from = location.state?.from?.pathname || '/'
@@ -77,6 +91,21 @@ const Login = () => {
 			}
 
 			if (result && result.user) {
+				// Store user info in database
+				const userData = {
+					name: result.user.displayName || '',
+					email: result.user.email || '',
+					photoUrl: result.user.photoURL || '',
+					lastLogin: new Date().toISOString(),
+					provider: provider.toLowerCase()
+				}
+				try {
+					await storeUserInDatabase(userData)
+				} catch (dbError) {
+					console.warn('Failed to store user in database:', dbError)
+					// Continue with login even if database storage fails
+				}
+				
 				// Small delay to ensure auth state updates
 				setTimeout(() => {
 					const from = location.state?.from?.pathname || '/'
@@ -237,19 +266,7 @@ const Login = () => {
 								Continue with Google
 							</button>
 
-							<button
-								onClick={() => handleSocialLogin('Facebook')}
-								className="btn btn-outline w-full gap-2 hover:btn-info transition-all disabled:opacity-50 text-base"
-								disabled={isSubmitting}
-								title="Continue with Facebook"
-							>
-								{isSubmitting ? (
-									<span className="loading loading-spinner loading-sm"></span>
-								) : (
-									<FaFacebook className="text-lg" />
-								)}
-								Continue with Facebook
-							</button>
+							
 						</div>
 
 						{/* Sign Up Link */}

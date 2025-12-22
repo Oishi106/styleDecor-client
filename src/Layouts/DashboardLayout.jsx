@@ -1,59 +1,141 @@
-import React, { useState } from 'react'
-import { Outlet, Link, useLocation } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FaBars, FaTimes, FaHome, FaShieldAlt, FaPalette, FaUser, FaSignOutAlt, FaChartLine, FaUsers, FaCog, FaBell, FaClipboardList } from 'react-icons/fa'
+import {
+	FaBars,
+	FaTimes,
+	FaHome,
+	FaShieldAlt,
+	FaPalette,
+	FaUser,
+	FaSignOutAlt,
+	FaChartLine,
+	FaUsers,
+	FaCog,
+	FaBell,
+	FaClipboardList,
+	FaSpinner,
+} from 'react-icons/fa'
 import { useAuth } from '../context/AuthProvider'
 
+/**
+ * Shared Dashboard Layout Component
+ *
+ * Features:
+ * - Persistent Sidebar with role-based navigation
+ * - Top Navbar with user profile and notifications
+ * - Dynamic menu items based on user role (User, Admin, Decorator)
+ * - Loading spinner for async route transitions
+ * - Home and Logout buttons always visible
+ * - Mobile-responsive design
+ * - Smooth Framer Motion animations
+ */
 const DashboardLayout = () => {
 	const [sidebarOpen, setSidebarOpen] = useState(false)
-	const { user, logout } = useAuth()
+	const [isLoading, setIsLoading] = useState(false)
+	const { user, logout, loading: authLoading } = useAuth()
 	const location = useLocation()
+	const navigate = useNavigate()
+
+	// Determine user role
+	const getUserRole = () => {
+		if (!user) return null
+		if (user?.email?.endsWith('@admin.com') || user?.uid === 'admin-user') {
+			return 'admin'
+		}
+		if (user?.role === 'decorator') {
+			return 'decorator'
+		}
+		return 'user'
+	}
+
+	const userRole = getUserRole()
+
+	// Role-based menu configuration
+	const roleBasedMenus = {
+		user: [
+			{
+				title: 'Dashboard',
+				icon: FaHome,
+				href: '/dashboard',
+				section: 'user',
+				items: [
+					{ label: 'Overview', href: '/dashboard' },
+					{ label: 'My Profile', href: '/dashboard/profile' },
+					{ label: 'My Bookings', href: '/dashboard/bookings' },
+					{ label: 'Payment History', href: '/dashboard/payments' },
+					{ label: 'Saved Services', href: '/dashboard/saved' },
+				],
+			},
+		],
+		admin: [
+			{
+				title: 'Admin Panel',
+				icon: FaShieldAlt,
+				href: '/admin',
+				section: 'admin',
+				items: [
+					{ label: 'Overview', href: '/admin' },
+					{ label: 'Manage Decorators', href: '/admin' },
+					{ label: 'Manage Services', href: '/admin' },
+					{ label: 'Bookings & Assignment', href: '/admin' },
+					{ label: 'Analytics', href: '/admin' },
+				],
+			},
+		],
+		decorator: [
+			{
+				title: 'My Projects',
+				icon: FaPalette,
+				href: '/dashboard/decorator',
+				section: 'decorator',
+				items: [
+					{ label: 'My Assigned Projects', href: '/dashboard/decorator' },
+					{ label: "Today's Schedule", href: '/dashboard/decorator' },
+					{ label: 'Project Status', href: '/dashboard/decorator' },
+					{ label: 'Earnings Summary', href: '/dashboard/decorator' },
+					{ label: 'Completed Projects', href: '/dashboard/decorator' },
+				],
+			},
+		],
+	}
+
+	// Get menu items based on user role
+	const menuItems = userRole ? roleBasedMenus[userRole] || [] : []
 
 	const toggleSidebar = () => setSidebarOpen(!sidebarOpen)
 
-	const menuItems = [
-		{
-			title: 'User Dashboard',
-			icon: FaHome,
-			href: '/dashboard',
-			section: 'user',
-			items: [
-				{ label: 'Overview', href: '/dashboard' },
-				{ label: 'My Profile', href: '/dashboard/profile' },
-				{ label: 'My Bookings', href: '/dashboard/bookings' },
-				{ label: 'Payment History', href: '/dashboard/payments' },
-				{ label: 'Saved Services', href: '/dashboard/saved' }
-			]
-		},
-		{
-			title: 'Admin Dashboard',
-			icon: FaShieldAlt,
-			href: '/admin',
-			section: 'admin',
-			items: [
-				{ label: 'Overview', href: '/admin' },
-				{ label: 'Users', href: '/admin/users' },
-				{ label: 'Services', href: '/admin/services' },
-				{ label: 'Bookings', href: '/admin/bookings' },
-				{ label: 'Analytics', href: '/admin/analytics' }
-			]
-		},
-		{
-			title: 'Decorator Dashboard',
-			icon: FaPalette,
-			href: '/decorator',
-			section: 'decorator',
-			items: [
-				{ label: 'Overview', href: '/decorator' },
-				{ label: 'My Services', href: '/decorator/services' },
-				{ label: 'Bookings', href: '/decorator/bookings' },
-				{ label: 'Reviews', href: '/decorator/reviews' },
-				{ label: 'Earnings', href: '/decorator/earnings' }
-			]
-		}
-	]
-
 	const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/')
+
+	// Simulate loading on route change
+	useEffect(() => {
+		setIsLoading(true)
+		const timer = setTimeout(() => setIsLoading(false), 300)
+		return () => clearTimeout(timer)
+	}, [location.pathname])
+
+	// Close sidebar on mobile when navigation happens
+	useEffect(() => {
+		setSidebarOpen(false)
+	}, [location.pathname])
+
+	// Handle logout
+	const handleLogout = async () => {
+		try {
+			setIsLoading(true)
+			await logout()
+			navigate('/')
+		} catch (error) {
+			console.error('Logout error:', error)
+		} finally {
+			setIsLoading(false)
+		}
+	}
+
+	// Navigate to home
+	const handleHome = () => {
+		navigate('/')
+	}
 
 	const sidebarVariants = {
 		hidden: { x: '-100%' },
@@ -65,8 +147,68 @@ const DashboardLayout = () => {
 		visible: { opacity: 1 }
 	}
 
+	const loadingSpinnerVariants = {
+		hidden: { opacity: 0 },
+		visible: { opacity: 1 }
+	}
+
+	// Show skeleton loading while auth is loading
+	if (authLoading) {
+		return (
+			<div className="flex h-screen bg-base-100 items-center justify-center">
+				<motion.div
+					initial={{ opacity: 0 }}
+					animate={{ opacity: 1 }}
+					className="flex flex-col items-center gap-4"
+				>
+					<FaSpinner className="text-4xl animate-spin text-primary" />
+					<p className="text-base-content/60">Loading dashboard...</p>
+				</motion.div>
+			</div>
+		)
+	}
+
+	// Fallback if user role cannot be determined
+	if (!userRole) {
+		return (
+			<div className="flex h-screen bg-base-100 items-center justify-center">
+				<div className="text-center space-y-4">
+					<p className="text-lg font-semibold text-base-content">
+						Unable to determine user role
+					</p>
+					<button
+						onClick={handleLogout}
+						className="btn btn-primary"
+					>
+						<FaSignOutAlt /> Logout
+					</button>
+				</div>
+			</div>
+		)
+	}
+
 	return (
 		<div className="flex h-screen bg-base-100">
+			{/* Loading Spinner Overlay */}
+			<AnimatePresence>
+				{isLoading && (
+					<motion.div
+						variants={loadingSpinnerVariants}
+						initial="hidden"
+						animate="visible"
+						exit="hidden"
+						className="fixed inset-0 bg-black/20 flex items-center justify-center z-50 pointer-events-none"
+					>
+						<motion.div
+							animate={{ rotate: 360 }}
+							transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+						>
+							<FaSpinner className="text-5xl text-primary" />
+						</motion.div>
+					</motion.div>
+				)}
+			</AnimatePresence>
+
 			{/* Mobile Overlay */}
 			<AnimatePresence>
 				{sidebarOpen && (
@@ -97,7 +239,9 @@ const DashboardLayout = () => {
 						</div>
 						<div>
 							<h3 className="font-bold text-lg text-white">StyleDecor</h3>
-							<p className="text-xs text-neutral-300">Dashboard</p>
+							<p className="text-xs text-neutral-300 capitalize">
+								{userRole} Portal
+							</p>
 						</div>
 					</div>
 					<button
@@ -110,16 +254,16 @@ const DashboardLayout = () => {
 
 				{/* User Profile Section */}
 				<div className="px-6 py-4 border-b border-neutral-700">
-					<div className="flex items-center gap-3 mb-2">
+					<div className="flex items-center gap-3 mb-3">
 						{user?.photoURL ? (
 							<img
 								src={user.photoURL}
 								alt={user.displayName}
-								className="w-10 h-10 rounded-full object-cover"
+								className="w-10 h-10 rounded-full object-cover border-2 border-primary"
 							/>
 						) : (
-							<div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-								<span className="text-white font-bold">
+							<div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center border-2 border-primary/50">
+								<span className="text-white font-bold text-sm">
 									{user?.displayName?.charAt(0)?.toUpperCase() || 'U'}
 								</span>
 							</div>
@@ -133,10 +277,11 @@ const DashboardLayout = () => {
 							</p>
 						</div>
 					</div>
-					<button className="btn btn-sm btn-outline w-full mt-2 text-neutral-300 hover:text-white">
-						<FaCog className="text-sm" />
-						Settings
-					</button>
+					<div className="space-y-2">
+						<span className="inline-block badge badge-primary capitalize">
+							{userRole}
+						</span>
+					</div>
 				</div>
 
 				{/* Navigation Menu */}
@@ -199,66 +344,119 @@ const DashboardLayout = () => {
 					})}
 				</nav>
 
-				{/* Sidebar Footer */}
+				{/* Sidebar Footer - Always Visible */}
 				<div className="p-6 border-t border-neutral-700 space-y-3">
+					{/* Home Button - Always Visible */}
+					<motion.button
+						whileHover={{ scale: 1.05 }}
+						whileTap={{ scale: 0.95 }}
+						onClick={handleHome}
+						className="btn btn-outline w-full justify-start gap-2 text-neutral-300 hover:text-white"
+					>
+						<FaHome className="text-lg" />
+						Home
+					</motion.button>
+
+					{/* Notifications */}
 					<button className="btn btn-outline w-full justify-start gap-2 text-neutral-300 hover:text-white">
 						<FaBell className="text-lg" />
 						Notifications
 					</button>
-					<button
-						onClick={logout}
+
+					{/* Logout Button - Always Visible */}
+					<motion.button
+						whileHover={{ scale: 1.05 }}
+						whileTap={{ scale: 0.95 }}
+						onClick={handleLogout}
+						disabled={isLoading}
 						className="btn btn-error w-full justify-start gap-2"
 					>
-						<FaSignOutAlt className="text-lg" />
+						{isLoading ? (
+							<FaSpinner className="text-lg animate-spin" />
+						) : (
+							<FaSignOutAlt className="text-lg" />
+						)}
 						Logout
-					</button>
+					</motion.button>
 				</div>
 			</motion.div>
 
 			{/* Main Content */}
 			<div className="flex-1 flex flex-col overflow-hidden">
-				{/* Top Header */}
-				<div className="bg-white border-b border-base-300 px-6 py-4 flex items-center justify-between">
-					<button
-						onClick={toggleSidebar}
-						className="lg:hidden btn btn-ghost btn-circle"
-					>
-						<FaBars className="text-2xl" />
-					</button>
-					<div className="flex-1 text-center lg:text-left">
-						<h1 className="text-2xl font-bold text-base-content">
-							{menuItems.find(item => isActive(item.href))?.title || 'Dashboard'}
-						</h1>
-					</div>
-					<div className="flex items-center gap-4">
-						<button className="btn btn-ghost btn-circle relative">
-							<FaBell className="text-xl" />
-							<span className="badge badge-sm badge-primary absolute top-0 right-0">3</span>
+				{/* Top Navbar */}
+				<div className="bg-white border-b border-base-300 shadow-sm">
+					<div className="px-4 lg:px-6 py-4 flex items-center justify-between max-w-7xl mx-auto">
+						{/* Mobile Menu Button */}
+						<button
+							onClick={toggleSidebar}
+							className="lg:hidden btn btn-ghost btn-circle"
+							title="Toggle Sidebar"
+						>
+							<FaBars className="text-2xl" />
 						</button>
-						{user?.photoURL ? (
-							<img
-								src={user.photoURL}
-								alt={user.displayName}
-								className="w-10 h-10 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
-								title={user.displayName}
-							/>
-						) : (
-							<div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
-								<span className="text-white font-bold text-sm">
-									{user?.displayName?.charAt(0)?.toUpperCase() || 'U'}
+
+						{/* Page Title */}
+						<motion.div
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+							key={location.pathname}
+							className="flex-1 text-center lg:text-left px-4"
+						>
+							<h1 className="text-2xl font-bold text-base-content">
+								{menuItems[0]?.title || 'Dashboard'}
+							</h1>
+							<p className="text-xs text-base-content/60 capitalize">
+								Role: {userRole}
+							</p>
+						</motion.div>
+
+						{/* Navbar Right Section */}
+						<div className="flex items-center gap-3 lg:gap-4">
+							{/* Notifications Bell */}
+							<motion.button
+								whileHover={{ scale: 1.1 }}
+								whileTap={{ scale: 0.95 }}
+								className="btn btn-ghost btn-circle relative"
+								title="Notifications"
+							>
+								<FaBell className="text-xl" />
+								<span className="badge badge-sm badge-primary absolute top-0 right-0">
+									3
 								</span>
-							</div>
-						)}
+							</motion.button>
+
+							{/* User Profile Avatar */}
+							<motion.div
+								whileHover={{ scale: 1.05 }}
+								className="avatar cursor-pointer hover:opacity-80 transition-opacity"
+								title={user?.displayName}
+							>
+								{user?.photoURL ? (
+									<img
+										src={user.photoURL}
+										alt={user.displayName}
+										className="w-10 rounded-full border border-primary"
+									/>
+								) : (
+									<div className="w-10 bg-primary rounded-full flex items-center justify-center border border-primary">
+										<span className="text-white font-bold text-sm">
+											{user?.displayName?.charAt(0)?.toUpperCase() || 'U'}
+										</span>
+									</div>
+								)}
+							</motion.div>
+						</div>
 					</div>
 				</div>
 
 				{/* Main Content Area */}
 				<div className="flex-1 overflow-y-auto bg-base-50">
 					<motion.div
+						key={location.pathname}
 						initial={{ opacity: 0, y: 10 }}
 						animate={{ opacity: 1, y: 0 }}
 						transition={{ duration: 0.3 }}
-						className="p-6"
+						className="p-4 lg:p-6 max-w-7xl mx-auto"
 					>
 						<Outlet />
 					</motion.div>

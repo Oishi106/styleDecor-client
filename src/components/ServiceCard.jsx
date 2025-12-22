@@ -4,6 +4,9 @@ import { FaStar } from 'react-icons/fa'
 
 const ServiceCard = ({ 
     id,
+    _id,
+    roomId,
+    detailId,
     image, 
     service_name, 
     category, 
@@ -11,8 +14,12 @@ const ServiceCard = ({
     short_description, 
     rating 
 }) => {
+    const serviceId =  _id 
+    const detailPath = serviceId ? `/services/${serviceId}` : '#'
+    const safeRating = Number(rating) || 0
+
     return (
-        <div className="card bg-base-100 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+        <div className="card bg-base-100 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 h-full flex flex-col">
             <figure className="relative h-48 overflow-hidden">
                 <img 
                     src={image} 
@@ -24,12 +31,12 @@ const ServiceCard = ({
                 </div>
             </figure>
             
-            <div className="card-body">
+            <div className="card-body flex flex-col flex-grow">
                 <h2 className="card-title text-lg font-bold">
                     {service_name}
                 </h2>
                 
-                <p className="text-sm text-base-content/70 line-clamp-2 mb-2">
+                <p className="text-sm text-base-content/70 line-clamp-2 mb-2 flex-grow">
                     {short_description}
                 </p>
                 
@@ -38,12 +45,12 @@ const ServiceCard = ({
                         {[...Array(5)].map((_, index) => (
                             <FaStar 
                                 key={index} 
-                                className={index < Math.floor(rating) ? 'text-warning' : 'text-gray-300'}
+                                className={index < Math.floor(safeRating) ? 'text-warning' : 'text-gray-300'}
                             />
                         ))}
                     </div>
                     <span className="text-sm font-medium ml-1">
-                        ({rating})
+                        ({safeRating})
                     </span>
                 </div>
                 
@@ -52,8 +59,9 @@ const ServiceCard = ({
                         ${price}
                     </div>
                     <Link 
-                        to={`/services/${id}`}
-                        className="btn btn-primary btn-sm"
+                        to={detailPath}
+                        className="btn btn-primary btn-sm disabled:btn-disabled"
+                        aria-disabled={!serviceId}
                     >
                         View Details
                     </Link>

@@ -1,87 +1,149 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import ServiceCard from '../components/ServiceCard'
 import DecoratorCard from '../components/DecoratorCard'
-import { FaMapMarkedAlt } from 'react-icons/fa'
+import { FaMapMarkedAlt, FaUsers, FaCheckCircle, FaGlobeAsia } from 'react-icons/fa'
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import 'leaflet/dist/leaflet.css'
+import L from 'leaflet'
 
-// Mock service data
-const mockServices = [
-  {
-    id: 1,
-    image: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=500',
-    service_name: 'Living Room Makeover',
-    category: 'Interior Design',
-    price: 299,
-    short_description: 'Transform your living space with modern furniture and decor arrangements.',
-    rating: 4.8
-  },
-  {
-    id: 2,
-    image: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=500',
-    service_name: 'Bedroom Styling',
-    category: 'Home Decor',
-    price: 249,
-    short_description: 'Create a relaxing sanctuary with expert bedroom decoration services.',
-    rating: 4.9
-  },
-  {
-    id: 3,
-    image: 'https://images.unsplash.com/photo-1556909212-d5b604d0c90d?w=500',
-    service_name: 'Kitchen Redesign',
-    category: 'Renovation',
-    price: 399,
-    short_description: 'Modern kitchen layouts with functional and aesthetic improvements.',
-    rating: 4.7
-  },
-  {
-    id: 4,
-    image: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=500',
-    service_name: 'Office Space Design',
-    category: 'Commercial',
-    price: 499,
-    short_description: 'Professional workspace design to boost productivity and creativity.',
-    rating: 4.6
+const Home = () => {
+  const [services, setServices] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  // Fix for default marker icon issue in React Leaflet
+  useEffect(() => {
+    delete L.Icon.Default.prototype._getIconUrl
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+      iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+    })
+  }, [])
+
+  // Coverage locations
+  const coverageLocations = [
+    {
+      id: 1,
+      name: 'Bangladesh',
+      position: [23.6850, 90.3563],
+      description: 'Primary service region - Full coverage available'
+    },
+    {
+      id: 2,
+      name: 'India',
+      position: [20.5937, 78.9629],
+      description: 'Expanding services available'
+    },
+    {
+      id: 3,
+      name: 'Pakistan',
+      position: [30.3753, 69.3451],
+      description: 'Limited services available'
+    },
+    {
+      id: 4,
+      name: 'UAE',
+      position: [23.4241, 53.8478],
+      description: 'Premium services available'
+    },
+    {
+      id: 5,
+      name: 'Thailand',
+      position: [15.8700, 100.9925],
+      description: 'Select services available'
+    }
+  ]
+
+  // Fetch services from API
+  const fetchServices = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/rooms')
+      if (response.ok) {
+        const data = await response.json()
+        // Take only first 4 services for home page
+        setServices(data.slice(0, 4))
+      }
+    } catch (err) {
+      console.error('Error fetching services:', err)
+    } finally {
+      setLoading(false)
+    }
   }
-]
 
-// Mock decorator data
+  useEffect(() => {
+    fetchServices()
+  }, [])
+
+// Mock decorator data (keeping for now until we have decorator API)
 const mockDecorators = [
   {
+    id: 'decorator-1',
     name: 'Sarah Johnson',
     image: 'https://i.pravatar.cc/150?img=1',
     rating: 4.9,
     reviews: 127,
     location: 'Dhaka',
-    specialization: 'Modern Interior'
+    specialization: 'Modern Interior',
+    bio: 'Award-winning designer specializing in modern and airy interiors with functional layouts.',
+    specialties: ['Living Rooms', 'Open-plan spaces', 'Color palettes'],
+    experience: '8 years | 220+ projects',
+    projects: [
+      { title: 'Gulshan Penthouse', result: 'Modern luxe makeover' },
+      { title: 'Banani Loft', result: 'Minimal, bright, and cozy' }
+    ]
   },
   {
+    id: 'decorator-2',
     name: 'Michael Chen',
     image: 'https://i.pravatar.cc/150?img=12',
     rating: 4.8,
     reviews: 98,
     location: 'Chittagong',
-    specialization: 'Classic Design'
+    specialization: 'Classic Design',
+    bio: 'Crafts timeless classic interiors with rich textures and elegant detailing.',
+    specialties: ['Classic motifs', 'Lighting design', 'Furniture curation'],
+    experience: '10 years | 180+ projects',
+    projects: [
+      { title: 'Hill View Villa', result: 'Classic coastal comfort' },
+      { title: 'City Club Lounge', result: 'Warm, inviting atmosphere' }
+    ]
   },
   {
+    id: 'decorator-3',
     name: 'Emma Williams',
     image: 'https://i.pravatar.cc/150?img=5',
     rating: 5.0,
     reviews: 156,
     location: 'Dhaka',
-    specialization: 'Minimalist Style'
+    specialization: 'Minimalist Style',
+    bio: 'Minimalist specialist focused on calm, clutter-free spaces that feel expansive.',
+    specialties: ['Minimalism', 'Scandinavian', 'Space planning'],
+    experience: '7 years | 250+ projects',
+    projects: [
+      { title: 'Nordic Studio', result: 'Serene, light-filled studio' },
+      { title: 'Minimal Office', result: 'Productive, distraction-free' }
+    ]
   },
   {
+    id: 'decorator-4',
     name: 'David Brown',
     image: 'https://i.pravatar.cc/150?img=13',
     rating: 4.7,
     reviews: 89,
     location: 'Sylhet',
-    specialization: 'Luxury Decor'
+    specialization: 'Luxury Decor',
+    bio: 'Delivers luxurious bespoke interiors with premium finishes and bold statements.',
+    specialties: ['Luxury suites', 'Custom millwork', 'Statement lighting'],
+    experience: '9 years | 140+ projects',
+    projects: [
+      { title: 'Lakeview Residence', result: 'Opulent yet cozy' },
+      { title: 'Boutique Hotel', result: 'Memorable guest experience' }
+    ]
   }
 ]
 
-const Home = () => {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -150,17 +212,23 @@ const Home = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {mockServices.map((service, index) => (
-            <motion.div
-              key={service.id}
-              initial={{ opacity: 0, x: index % 2 === 0 ? -100 : 100 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              viewport={{ once: false, amount: 0.3 }}
-            >
-              <ServiceCard {...service} />
-            </motion.div>
-          ))}
+          {loading ? (
+            <div className="col-span-full flex justify-center py-12">
+              <span className="loading loading-spinner loading-lg"></span>
+            </div>
+          ) : (
+            services.map((service, index) => (
+              <motion.div
+                key={service.id}
+                initial={{ opacity: 0, x: index % 2 === 0 ? -100 : 100 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: false, amount: 0.3 }}
+              >
+                <ServiceCard {...service} />
+              </motion.div>
+            ))
+          )}
         </div>
         
         <div className="text-center mt-10">
@@ -199,24 +267,91 @@ const Home = () => {
       {/* Coverage Map Preview */}
       <section className="py-16 px-6 lg:px-12 max-w-7xl mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4">Service Coverage</h2>
+          <h2 className="text-4xl font-bold mb-4">Global Service Coverage</h2>
           <p className="text-base-content/70 max-w-2xl mx-auto">
-            We provide professional decoration services across major cities in Bangladesh
+            Expanding our professional decoration services worldwide with presence in multiple countries
           </p>
         </div>
         
-        <div className="card bg-gradient-to-br from-primary/5 to-secondary/5 shadow-xl">
-          <div className="card-body items-center text-center py-20">
-            <FaMapMarkedAlt className="text-6xl text-primary mb-6" />
-            <h3 className="text-2xl font-bold mb-4">Coverage Map Coming Soon</h3>
-            <p className="text-base-content/70 max-w-md mb-6">
-              Interactive map showing our service coverage areas will be available here. 
-              Currently serving Dhaka, Chittagong, Sylhet, and surrounding regions.
-            </p>
-            <Link to="/coverage" className="btn btn-primary">
-              Explore Coverage Areas
-            </Link>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+          {[
+            { icon: FaGlobeAsia, title: '5 Countries', desc: 'Active in multiple regions' },
+            { icon: FaCheckCircle, title: '500+ Projects', desc: 'Successfully completed' },
+            { icon: FaUsers, title: '1000+ Clients', desc: 'Satisfied customers' },
+            { icon: FaMapMarkedAlt, title: '24/7 Support', desc: 'Always here to help' }
+          ].map((stat, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: index * 0.1 }}
+              viewport={{ once: false, amount: 0.3 }}
+            >
+              <div className="card bg-base-100 shadow-lg border-2 border-primary/20 hover:shadow-xl transition-all hover:-translate-y-1">
+                <div className="card-body items-center text-center">
+                  <stat.icon className="text-5xl text-primary mb-4" />
+                  <h3 className="card-title text-xl">{stat.title}</h3>
+                  <p className="text-sm text-base-content/70">{stat.desc}</p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Interactive Map */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          viewport={{ once: false, amount: 0.3 }}
+          className="card bg-base-100 shadow-2xl overflow-hidden"
+        >
+          <div style={{ height: '500px', width: '100%', position: 'relative' }}>
+            <MapContainer
+              center={[20, 50]}
+              zoom={3}
+              style={{ height: '100%', width: '100%', position: 'relative', zIndex: 1 }}
+              scrollWheelZoom={true}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              
+              {coverageLocations.map((location) => (
+                <Marker key={location.id} position={location.position}>
+                  <Popup>
+                    <div className="text-center p-2">
+                      <h3 className="font-bold text-lg mb-1">{location.name}</h3>
+                      <p className="text-sm text-gray-600">{location.description}</p>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+            </MapContainer>
           </div>
+
+          {/* Coverage Info Below Map */}
+          <div className="card-body p-8 bg-gradient-to-r from-primary/5 to-secondary/5">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              {coverageLocations.map((location) => (
+                <motion.div
+                  key={location.id}
+                  whileHover={{ scale: 1.05 }}
+                  className="text-center p-4 bg-base-100 rounded-lg border-2 border-primary/20 hover:border-primary/50 transition-all"
+                >
+                  <h4 className="font-bold text-lg mb-2 text-primary">{location.name}</h4>
+                  <p className="text-xs text-base-content/70">{location.description}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+
+        <div className="text-center mt-8">
+          <Link to="/coverage" className="btn btn-primary btn-lg gap-2">
+            <FaMapMarkedAlt /> Explore Full Coverage Map
+          </Link>
         </div>
       </section>
 

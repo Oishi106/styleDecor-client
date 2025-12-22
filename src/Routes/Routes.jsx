@@ -10,14 +10,19 @@ import ServicePage from '../Pages/ServicePage'
 import ServiceDetails from '../Pages/ServiceDetails'
 import Booking from '../Pages/Booking'
 import Payment from '../Pages/Payment'
+import StripePayment from '../Pages/StripePayment'
 import CoverageMap from '../Pages/CoverageMap'
 import Register from '../Pages/Register'
 import PrivateRoutes from './PrivateRoutes'
+import AdminRoute from './AdminRoute'
 import Login from '../Pages/Login'
 import Profile from '../Pages/Profile'
+import Auth from '../Pages/Auth'
+import DashboardSelector from '../Pages/DashboardSelector'
 import UserDashboard from '../Pages/Dashboard/UserDashboard'
 import AdminDashboard from '../Pages/Dashboard/AdminDashboard'
 import DecoratorDashboard from '../Pages/Dashboard/DecoratorDashboard'
+import DecoratorProfile from '../Pages/DecoratorProfile'
 import MyProfile from '../Pages/Dashboard/MyProfile'
 import MyBookings from '../Pages/Dashboard/MyBookings'
 import PaymentHistory from '../Pages/Dashboard/PaymentHistory'
@@ -40,6 +45,10 @@ const router = createBrowserRouter([
             {
                 path: 'services/:id',
                 element: <ServiceDetails />,
+            },
+            {
+                path: 'decorators/:id',
+                element: <DecoratorProfile />,
             },
             {
                 path: 'about',
@@ -66,16 +75,24 @@ const router = createBrowserRouter([
                 ),
             },
             {
+                path: 'stripe-payment',
+                element: (
+                    <PrivateRoutes>
+                        <StripePayment />
+                    </PrivateRoutes>
+                ),
+            },
+            {
                 path: 'coverage',
                 element: <CoverageMap />,
             },
             {
                 path: 'register',
-                element: <Register />,
+                element: <Auth />,
             },
             {
                 path: 'login',
-                element: <Login />,
+                element: <Auth />,
             },
             {
                 path: 'profile',
@@ -102,7 +119,19 @@ const router = createBrowserRouter([
         children: [
             {
                 index: true,
+                element: <DashboardSelector />,
+            },
+            {
+                path: 'user',
                 element: <UserDashboard />,
+            },
+            {
+                path: 'admin',
+                element: <AdminDashboard />,
+            },
+            {
+                path: 'decorator',
+                element: <DecoratorDashboard />,
             },
             {
                 path: 'profile',
@@ -125,9 +154,9 @@ const router = createBrowserRouter([
     {
         path: '/admin',
         element: (
-            <PrivateRoutes>
+            <AdminRoute>
                 <DashboardLayout />
-            </PrivateRoutes>
+            </AdminRoute>
         ),
         children: [
             {
@@ -149,6 +178,20 @@ const router = createBrowserRouter([
             {
                 path: 'analytics',
                 element: <div className="p-6"><h2 className="text-2xl font-bold">Analytics</h2></div>,
+            },
+        ],
+    },
+    {
+        path: '/admin/dashboard',
+        element: (
+            <AdminRoute>
+                <DashboardLayout />
+            </AdminRoute>
+        ),
+        children: [
+            {
+                index: true,
+                element: <AdminDashboard />,
             },
         ],
     },
@@ -179,6 +222,20 @@ const router = createBrowserRouter([
             {
                 path: 'earnings',
                 element: <div className="p-6"><h2 className="text-2xl font-bold">Earnings</h2></div>,
+            },
+        ],
+    },
+    {
+        path: '/decorator/dashboard',
+        element: (
+            <PrivateRoutes>
+                <DashboardLayout />
+            </PrivateRoutes>
+        ),
+        children: [
+            {
+                index: true,
+                element: <DecoratorDashboard />,
             },
         ],
     },

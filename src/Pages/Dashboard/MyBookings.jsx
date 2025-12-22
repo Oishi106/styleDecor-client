@@ -1,17 +1,46 @@
-import React from 'react'
+
+import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { FaCalendarAlt, FaMapMarkerAlt, FaDollarSign, FaTrash, FaEye } from 'react-icons/fa'
+import { FaCalendarAlt, FaMapMarkerAlt, FaDollarSign, FaTrash, FaEye, FaEdit } from 'react-icons/fa'
 import { useBooking } from '../../context/BookingProvider'
 
 const MyBookings = () => {
-	const { bookings, cancelBooking } = useBooking()
+	const { bookings, cancelBooking, updateBooking } = useBooking()
+	const [editingBooking, setEditingBooking] = useState(null)
 
-	const handleCancelBooking = (id) => {
+	/**
+	 * Handle booking cancellation
+	 * Shows confirmation dialog before cancelling
+	 */
+	const handleCancelBooking = (id, status) => {
+		// Prevent cancellation of completed bookings
+		if (status === 'Completed') {
+			alert('Cannot cancel completed bookings')
+			return
+		}
+		
 		if (confirm('Are you sure you want to cancel this booking?')) {
 			cancelBooking(id)
 		}
 	}
 
+	/**
+	 * Handle booking update
+	 * Opens edit modal/form for the booking
+	 */
+	const handleUpdateBooking = (booking) => {
+		if (booking.status === 'Completed') {
+			alert('Cannot update completed bookings')
+			return
+		}
+		setEditingBooking(booking)
+		// TODO: Open modal or inline edit form
+	}
+
+	/**
+	 * Get badge styling based on booking status
+	 * Returns appropriate DaisyUI badge class
+	 */
 	const getStatusBadge = (status) => {
 		switch (status) {
 			case 'Confirmed':
@@ -29,13 +58,13 @@ const MyBookings = () => {
 
 	return (
 		<div className="space-y-6">
-			{/* Header */}
+			{/* Page Header */}
 			<div>
 				<h2 className="text-3xl font-bold">My Bookings</h2>
 				<p className="text-base-content/60">View and manage your service bookings</p>
 			</div>
 
-			{/* Stats Cards */}
+			{/* Statistics Overview Cards */}
 			<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
@@ -91,7 +120,7 @@ const MyBookings = () => {
 				</motion.div>
 			</div>
 
-			{/* Bookings Table */}
+			{/* Bookings Table - Desktop View */}
 			<motion.div
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
@@ -146,15 +175,29 @@ const MyBookings = () => {
 										</td>
 										<td>
 											<div className="flex gap-2">
+												{/* View Details Button */}
 												<button
 													className="btn btn-sm btn-ghost btn-circle"
 													title="View Details"
 												>
 													<FaEye />
 												</button>
+												
+												{/* Update Button - Only for non-completed bookings */}
 												{booking.status !== 'Cancelled' && booking.status !== 'Completed' && (
 													<button
-														onClick={() => handleCancelBooking(booking.id)}
+														onClick={() => handleUpdateBooking(booking)}
+														className="btn btn-sm btn-info btn-circle"
+														title="Update Booking"
+													>
+														<FaEdit />
+													</button>
+												)}
+												
+												{/* Cancel Button - Only for non-completed/non-cancelled bookings */}
+												{booking.status !== 'Cancelled' && booking.status !== 'Completed' && (
+													<button
+														onClick={() => handleCancelBooking(booking.id, booking.status)}
 														className="btn btn-sm btn-error btn-circle"
 														title="Cancel Booking"
 													>
@@ -171,7 +214,7 @@ const MyBookings = () => {
 				</div>
 			</motion.div>
 
-			{/* Empty State */}
+			{/* Empty State - Shown when no bookings exist */}
 			{bookings.length === 0 && (
 				<div className="card bg-base-100 shadow-xl">
 					<div className="card-body text-center py-12">

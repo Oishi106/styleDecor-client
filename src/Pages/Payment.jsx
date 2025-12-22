@@ -1,40 +1,233 @@
-import React, { useState } from 'react'
+/**
+ * Payment Component
+ * 
+ * Professional Stripe checkout interface for StyleDecor
+ * Features:
+ * - Stripe Elements integration
+ * - Real payment processing
+ * - Order summary with itemized pricing
+ * - Secure payment processing with loading state
+ * - Success confirmation with animation
+ * - Integration with backend APIs
+ * 
+ * Design: Modern & Minimalist with gradient backgrounds
+ * Responsive: Mobile-optimized layout
+ */
+
+import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { FaCreditCard, FaLock, FaCheckCircle } from 'react-icons/fa'
+import { FaLock, FaCheckCircle } from 'react-icons/fa'
+import { loadStripe } from '@stripe/stripe-js'
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { useBooking } from '../context/BookingProvider'
+import { useAuth } from '../context/AuthProvider'
+import { createPaymentIntent, confirmPayment } from '../api/paymentApi'
+
+// Initialize Stripe with public key from environment
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
+
+// Toast Component
+const Toast = ({ message, type, onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 4000)
+    return () => clearTimeout(timer)
+  }, [onClose])
+
+  const bgColor = type === 'success' ? 'alert-success' : 'alert-error'
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -50 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -50 }}
+      className={`alert ${bgColor} shadow-lg fixed top-4 right-4 z-50 max-w-sm`}
+    >
+      <div className="flex items-center gap-3">
+        <FaCheckCircle className="text-2xl" />
+        <span className="font-semibold">{message}</span>
+      </div>
+    </motion.div>
+  )
+}
+
+// Stripe Payment Form Component
+const PaymentForm = ({ booking, service, onSuccess }) => {
+  const stripe = useStripe()
+  const elements = useElements()
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [clientSecret, setClientSecret] = useState(null)
+  const [toast, setToast] = useState(null)
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false) // Prevent double calls
+
+  useEffect(() => {
+    // IMPORTANT: Only call after booking is created and bookingId exists
+    const getPaymentIntent = async () => {
+      try {
+        if (!booking?._id) {
+          setToast({ message: 'Invalid booking ID. Please create booking first.', type: 'error' })
+          return
+        }
+
+        const response = await createPaymentIntent(booking.price * 100, booking._id)
+        setClientSecret(response.clientSecret)
+      } catch (error) {
+        console.error('Error getting payment intent:', error)
+        setToast({ message: 'Failed to initialize payment', type: 'error' })
+      }
+    }
+
+    getPaymentIntent()
+  }, [booking?._id])
+
+  const handlePayment = async (e) => {
+    e.preventDefault()
+
+    // Prevent double payment calls
+    if (paymentConfirmed) {
+      setToast({ message: 'Payment already processing...', type: 'error' })
+      return
+    }
+
+    if (!stripe || !elements || !clientSecret) {
+      setToast({ message: 'Payment system not ready', type: 'error' })
+      return
+    }
+
+    // Validate booking data
+    if (!booking?._id) {
+      setToast({ message: 'Invalid booking. Please start over.', type: 'error' })
+      return
+    }
+
+    setIsProcessing(true)
+
+    try {
+      const cardElement = elements.getElement(CardElement)
+
+      const { paymentIntent, error } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: cardElement,
+          billing_details: {
+            name: booking?.name || 'Guest',
+            email: booking?.email || 'guest@example.com'
+          }
+        }
+      })
+
+      if (error) {
+        setToast({ message: error.message, type: 'error' })
+        setIsProcessing(false)
+        return
+      }
+
+      // IMPORTANT: Only confirm payment if status is succeeded
+      if (paymentIntent.status === 'succeeded') {
+        setPaymentConfirmed(true) // Prevent further calls
+
+        try {
+          // Call PATCH /payments/confirm/:bookingId ONLY ONCE
+          await confirmPayment(booking._id, paymentIntent.id)
+
+          setToast({ message: 'Payment successful!', type: 'success' })
+          setTimeout(() => {
+            onSuccess()
+          }, 1500)
+        } catch (confirmError) {
+          console.error('Error confirming payment:', confirmError)
+          setToast({ message: 'Payment processed but confirmation failed. Contact support.', type: 'error' })
+          setIsProcessing(false)
+        }
+      } else {
+        setToast({ message: `Payment status: ${paymentIntent.status}`, type: 'error' })
+        setIsProcessing(false)
+      }
+    } catch (error) {
+      console.error('Payment error:', error)
+      setToast({ message: error.message || 'Payment failed', type: 'error' })
+      setIsProcessing(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handlePayment} className="space-y-6">
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+
+      {/* Card Element */}
+      <div className="card bg-base-200 p-4">
+        <CardElement
+          options={{
+            style: {
+              base: {
+                fontSize: '16px',
+                color: '#000',
+                '::placeholder': {
+                  color: '#888'
+                }
+              },
+              invalid: {
+                color: '#dc2626'
+              }
+            }
+          }}
+        />
+      </div>
+
+      {/* Security Notice */}
+      <div className="flex items-center gap-2 text-sm text-base-content/60">
+        <FaLock className="text-primary" />
+        <span>Your payment information is encrypted and secure</span>
+      </div>
+
+      {/* Submit Button */}
+      <button
+        type="submit"
+        disabled={!stripe || isProcessing || !clientSecret}
+        className="btn btn-primary btn-lg w-full"
+      >
+        {isProcessing ? (
+          <>
+            <span className="loading loading-spinner loading-sm"></span>
+            Processing...
+          </>
+        ) : (
+          `Pay $${booking?.amount?.toFixed(2) || '0.00'}`
+        )}
+      </button>
+    </form>
+  )
+}
 
 const Payment = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { addPayment } = useBooking()
+  
+  // Booking data passed from previous page
   const { booking, service } = location.state || {}
   
-  const [paymentMethod, setPaymentMethod] = useState('credit-card')
-  const [isProcessing, setIsProcessing] = useState(false)
+  // Payment state management
   const [paymentSuccess, setPaymentSuccess] = useState(false)
 
-  const handlePayment = (e) => {
-    e.preventDefault()
-    setIsProcessing(true)
+  const handlePaymentSuccess = () => {
+    // Add payment record to context
+    addPayment({
+      service: booking?.serviceName || 'Service',
+      amount: `$${booking?.amount || '0'}`,
+      method: 'Stripe Card'
+    })
 
-    // Simulate payment processing
+    setPaymentSuccess(true)
+    
+    // Redirect to payment history after 3 seconds
     setTimeout(() => {
-      // Add payment to context
-      addPayment({
-        service: booking?.service || 'Living Room Makeover',
-        amount: booking?.amount || '$299',
-        method: paymentMethod === 'credit-card' ? 'Credit Card' : 
-                paymentMethod === 'paypal' ? 'PayPal' : 'Debit Card'
-      })
-
-      setPaymentSuccess(true)
-      setTimeout(() => {
-        navigate('/dashboard/payments')
-      }, 3000)
-    }, 2000)
+      navigate('/dashboard/payments')
+    }, 3000)
   }
 
+  /**
+   * Success State - Animated confirmation screen
+   */
   if (paymentSuccess) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-success/10 to-primary/10 flex items-center justify-center px-6">
@@ -47,15 +240,18 @@ const Payment = () => {
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            transition={{ delay: 0.3, type: 'spring' }}
-            className="text-6xl text-success mb-6"
+            transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
+            className="text-success mb-6 flex justify-center"
           >
-            <FaCheckCircle />
+            <FaCheckCircle size={80} />
           </motion.div>
           <h1 className="text-4xl font-bold mb-4">Payment Successful!</h1>
           <p className="text-lg text-base-content/70 mb-8">
             Your booking has been confirmed and paid. Redirecting to payment history...
           </p>
+          <div className="flex justify-center mb-6">
+            <span className="loading loading-spinner loading-lg text-primary"></span>
+          </div>
           <button
             onClick={() => navigate('/dashboard/payments')}
             className="btn btn-primary btn-lg w-full"
@@ -67,141 +263,56 @@ const Payment = () => {
     )
   }
 
+  /**
+   * Main Payment Form View
+   */
   return (
-    <div className="min-h-screen bg-gradient-to-br from-base-100 via-primary/5 to-secondary/5 py-12 px-6 lg:px-12">
+    <div className="min-h-screen bg-gradient-to-br from-base-100 via-primary/5 to-secondary/5 py-12 px-4 sm:px-6 lg:px-12">
       <div className="max-w-3xl mx-auto">
-        {/* Header */}
+        {/* Page Header */}
         <motion.div
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <h1 className="text-5xl font-bold mb-3">Payment</h1>
-          <p className="text-lg text-base-content/60">Complete your booking payment securely</p>
+          <h1 className="text-4xl sm:text-5xl font-bold mb-3">Complete Payment</h1>
+          <p className="text-base sm:text-lg text-base-content/60">Secure checkout powered by Stripe</p>
         </motion.div>
 
+        {/* Main Payment Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="card bg-base-100 shadow-2xl p-8 mb-8"
+          className="card bg-base-100 shadow-2xl p-6 sm:p-8 mb-8"
         >
-          {/* Order Summary */}
+          {/* Order Summary Section */}
           <div className="mb-8 pb-8 border-b-2 border-base-200">
-            <h2 className="text-2xl font-bold mb-4">Order Summary</h2>
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+              <span>Order Summary</span>
+            </h2>
             <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-base-content/70">Living Room Makeover</span>
-                <span className="font-bold">$299.00</span>
+              <div className="flex justify-between items-center">
+                <span className="text-base-content/70">{booking?.roomName || 'Service'}</span>
+                <span className="font-bold text-lg">${booking?.price?.toFixed(2) || '0.00'}</span>
               </div>
-              <div className="flex justify-between text-sm text-base-content/60">
-                <span>Taxes & Fees</span>
-                <span>$29.90</span>
-              </div>
-              <div className="flex justify-between text-xl font-bold pt-4">
+              <div className="divider my-2"></div>
+              <div className="flex justify-between text-xl font-bold pt-2">
                 <span>Total Amount</span>
-                <span className="text-primary">$328.90</span>
+                <span className="text-primary">${booking?.price?.toFixed(2) || '0.00'}</span>
               </div>
             </div>
           </div>
 
-          {/* Payment Methods */}
-          <form onSubmit={handlePayment} className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold mb-4">Select Payment Method</h2>
-              <div className="space-y-3">
-                {[
-                  { id: 'credit-card', name: 'Credit Card', desc: 'Visa, Mastercard, Amex' },
-                  { id: 'debit-card', name: 'Debit Card', desc: 'All major debit cards' },
-                  { id: 'digital-wallet', name: 'Digital Wallet', desc: 'Apple Pay, Google Pay' }
-                ].map(method => (
-                  <label key={method.id} className="flex items-center p-4 border-2 border-base-300 rounded-lg cursor-pointer hover:border-primary transition-all">
-                    <input
-                      type="radio"
-                      name="payment-method"
-                      value={method.id}
-                      checked={paymentMethod === method.id}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="radio radio-primary"
-                    />
-                    <div className="ml-4">
-                      <div className="font-bold">{method.name}</div>
-                      <div className="text-sm text-base-content/60">{method.desc}</div>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Card Details (for demonstration) */}
-            {paymentMethod === 'credit-card' && (
-              <div className="space-y-4 bg-gradient-to-br from-primary/5 to-secondary/5 p-6 rounded-lg">
-                <div>
-                  <label className="label">
-                    <span className="label-text font-bold">Card Number</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="1234 5678 9012 3456"
-                    className="input input-bordered w-full bg-base-100"
-                    disabled
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="label">
-                      <span className="label-text font-bold">Expiry Date</span>
-                    </label>
-                    <input type="text" placeholder="MM/YY" className="input input-bordered w-full bg-base-100" disabled />
-                  </div>
-                  <div>
-                    <label className="label">
-                      <span className="label-text font-bold">CVV</span>
-                    </label>
-                    <input type="text" placeholder="123" className="input input-bordered w-full bg-base-100" disabled />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Security Notice */}
-            <div className="bg-info/10 border-l-4 border-info rounded p-4">
-              <div className="flex items-center gap-2 text-info font-semibold">
-                <FaLock />
-                Your payment is secure and encrypted
-              </div>
-            </div>
-
-            {/* Pay Button */}
-            <button
-              type="submit"
-              disabled={isProcessing}
-              className="btn btn-primary btn-lg w-full font-bold gap-2 text-lg"
-            >
-              {isProcessing ? (
-                <>
-                  <span className="loading loading-spinner"></span>
-                  Processing Payment...
-                </>
-              ) : (
-                <>
-                  <FaCreditCard />
-                  Pay $328.90
-                </>
-              )}
-            </button>
-          </form>
-        </motion.div>
-
-        {/* Info Footer */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="text-center text-sm text-base-content/60"
-        >
-          <p>This is a UI demonstration. No actual payment will be processed.</p>
+          {/* Payment Form with Stripe */}
+          <Elements stripe={stripePromise}>
+            <PaymentForm 
+              booking={booking} 
+              service={service} 
+              onSuccess={handlePaymentSuccess}
+            />
+          </Elements>
         </motion.div>
       </div>
     </div>

@@ -1,124 +1,55 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import ServiceCard from '../components/ServiceCard'
 import { FaSearch, FaFilter, FaDollarSign, FaSync } from 'react-icons/fa'
-
-// Mock service data
-const allServices = [
-  {
-    id: 1,
-    image: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=500',
-    service_name: 'Living Room Makeover',
-    category: 'Interior Design',
-    price: 299,
-    short_description: 'Transform your living space with modern furniture and decor arrangements.',
-    rating: 4.8
-  },
-  {
-    id: 2,
-    image: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=500',
-    service_name: 'Bedroom Styling',
-    category: 'Home Decor',
-    price: 249,
-    short_description: 'Create a relaxing sanctuary with expert bedroom decoration services.',
-    rating: 4.9
-  },
-  {
-    id: 3,
-    image: 'https://images.unsplash.com/photo-1556909212-d5b604d0c90d?w=500',
-    service_name: 'Kitchen Redesign',
-    category: 'Renovation',
-    price: 399,
-    short_description: 'Modern kitchen layouts with functional and aesthetic improvements.',
-    rating: 4.7
-  },
-  {
-    id: 4,
-    image: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=500',
-    service_name: 'Office Space Design',
-    category: 'Commercial',
-    price: 499,
-    short_description: 'Professional workspace design to boost productivity and creativity.',
-    rating: 4.6
-  },
-  {
-    id: 5,
-    image: 'https://images.unsplash.com/photo-1578500494198-246f612d03b3?w=500',
-    service_name: 'Bathroom Remodeling',
-    category: 'Renovation',
-    price: 349,
-    short_description: 'Luxurious bathroom designs with modern fixtures and elegant layouts.',
-    rating: 4.8
-  },
-  {
-    id: 6,
-    image: 'https://images.unsplash.com/photo-1631679706909-1844bbd07221?w=500',
-    service_name: 'Wall Art Curation',
-    category: 'Home Decor',
-    price: 189,
-    short_description: 'Expert selection and arrangement of wall art to complement your space.',
-    rating: 4.9
-  },
-  {
-    id: 7,
-    image: 'https://images.unsplash.com/photo-1585399363032-096db2f91aed?w=500',
-    service_name: 'Lighting Design',
-    category: 'Interior Design',
-    price: 279,
-    short_description: 'Strategic lighting solutions to enhance ambiance and functionality.',
-    rating: 4.7
-  },
-  {
-    id: 8,
-    image: 'https://images.unsplash.com/photo-1574909514516-4b922e08af35?w=500',
-    service_name: 'Furniture Selection',
-    category: 'Home Decor',
-    price: 329,
-    short_description: 'Curated furniture pieces that match your style and budget.',
-    rating: 4.8
-  },
-  {
-    id: 9,
-    image: 'https://images.unsplash.com/photo-1617638924702-92d37a439220?w=500',
-    service_name: 'Color Consultation',
-    category: 'Interior Design',
-    price: 199,
-    short_description: 'Professional color schemes and palette design for any room.',
-    rating: 4.6
-  },
-  {
-    id: 10,
-    image: 'https://images.unsplash.com/photo-1585399364003-9d6c00b5e6e3?w=500',
-    service_name: 'Retail Store Design',
-    category: 'Commercial',
-    price: 599,
-    short_description: 'Eye-catching retail spaces that drive customer engagement.',
-    rating: 4.9
-  },
-  {
-    id: 11,
-    image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=500',
-    service_name: 'Garden Landscaping',
-    category: 'Outdoor Design',
-    price: 449,
-    short_description: 'Beautiful outdoor spaces with plants and decorative elements.',
-    rating: 4.7
-  },
-  {
-    id: 12,
-    image: 'https://images.unsplash.com/photo-1615873516217-92454c440339?w=500',
-    service_name: 'Entryway Decoration',
-    category: 'Home Decor',
-    price: 229,
-    short_description: 'Create stunning first impressions with expert entryway styling.',
-    rating: 4.8
-  }
-]
+import ServiceCard from '../components/ServiceCard'
+import { getAllRooms } from '../api/roomApi'
 
 const ServicePage = () => {
+  const [allServices, setAllServices] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  
+  // Fetch services from API
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        setLoading(true)
+        const data = await getAllRooms()
+        const normalized = (Array.isArray(data) ? data : []).map((item) => ({
+          ...item,
+          id: item.id || item._id || item.roomId,
+          detailId: item.id || item._id || item.roomId,
+          service_name: item.service_name || item.title || item.name || 'Untitled Service',
+          category: item.category || item.type || 'General',
+          price: Number(item.price) || 0,
+          rating: Number(item.rating) || 0,
+          image: item.image || item.photo || item.thumbnail,
+          short_description: item.short_description || item.description || 'No description provided.',
+        }))
+        setAllServices(normalized)
+      } catch (err) {
+        setError(err.message || 'Failed to fetch services')
+        console.error('Error fetching services:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchServices()
+  }, [])
+
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
-  const [maxPrice, setMaxPrice] = useState(600)
+  const [maxPrice, setMaxPrice] = useState(null)
+
+  // Calculate max price from services
+  const calculatedMaxPrice = useMemo(() => {
+    if (allServices.length === 0) return 100000
+    return Math.max(...allServices.map(s => s.price))
+  }, [allServices])
+
+  // Use calculatedMaxPrice if maxPrice is not set
+  const effectiveMaxPrice = maxPrice !== null ? maxPrice : calculatedMaxPrice
 
   // Get unique categories
   const categories = ['all', ...new Set(allServices.map(s => s.category))]
@@ -126,13 +57,37 @@ const ServicePage = () => {
   // Filter services based on search, category, and price
   const filteredServices = useMemo(() => {
     return allServices.filter(service => {
-      const matchesSearch = service.service_name.toLowerCase().includes(searchTerm.toLowerCase())
-      const matchesCategory = selectedCategory === 'all' || service.category === selectedCategory
-      const matchesPrice = service.price <= maxPrice
+      const name = service.service_name || ''
+      const category = service.category || 'General'
+      const price = Number(service.price) || 0
+
+      const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesCategory = selectedCategory === 'all' || category === selectedCategory
+      const matchesPrice = price <= effectiveMaxPrice
 
       return matchesSearch && matchesCategory && matchesPrice
     })
-  }, [searchTerm, selectedCategory, maxPrice])
+  }, [searchTerm, selectedCategory, effectiveMaxPrice, allServices])
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <span className="loading loading-spinner loading-lg"></span>
+      </div>
+    )
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="alert alert-error max-w-md">
+          <span>Error: {error}</span>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-base-100 via-primary/5 to-secondary/5 py-12 px-6 lg:px-12">
@@ -205,19 +160,19 @@ const ServicePage = () => {
                   <FaDollarSign className="text-accent" />
                   Max Budget
                 </span>
-                <span className="badge badge-primary badge-md font-bold">${maxPrice}</span>
+                <span className="badge badge-primary badge-md font-bold">${effectiveMaxPrice}</span>
               </label>
               <input
                 type="range"
                 min="0"
-                max="600"
-                value={maxPrice}
+                max={calculatedMaxPrice}
+                value={effectiveMaxPrice}
                 onChange={(e) => setMaxPrice(parseInt(e.target.value))}
                 className="range range-primary range-lg"
               />
               <div className="flex justify-between text-xs font-semibold text-base-content/60 mt-3">
                 <span className="badge badge-outline">$0</span>
-                <span className="badge badge-outline">$600</span>
+                <span className="badge badge-outline">${calculatedMaxPrice}</span>
               </div>
             </div>
 
@@ -227,7 +182,7 @@ const ServicePage = () => {
                 onClick={() => {
                   setSearchTerm('')
                   setSelectedCategory('all')
-                  setMaxPrice(600)
+                  setMaxPrice(null)
                 }}
                 className="btn btn-primary gap-2 self-end h-12 text-base font-bold hover:shadow-lg transition-all"
               >
@@ -264,7 +219,7 @@ const ServicePage = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
           >
             {filteredServices.map((service, index) => (
               <motion.div

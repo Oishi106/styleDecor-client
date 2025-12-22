@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { FaUser, FaEnvelope, FaLock, FaImage } from 'react-icons/fa'
 import { useAuth } from '../context/AuthProvider'
+import { storeUserInDatabase } from '../api/userApi'
 
 const Register = () => {
   const navigate = useNavigate()
@@ -56,7 +57,20 @@ const Register = () => {
     
     setIsSubmitting(true)
     try {
+      // Register user with Firebase
       await register(formData.name, formData.email, formData.password, formData.photoDataUrl)
+      
+      // Store user details in database
+      const userData = {
+        name: formData.name,
+        email: formData.email,
+        photoUrl: formData.photoDataUrl,
+        createdAt: new Date().toISOString(),
+        role: 'user'
+      }
+      
+      await storeUserInDatabase(userData)
+      
       // Small delay to ensure auth state updates
       setTimeout(() => {
         const from = location.state?.from?.pathname || '/'
@@ -64,6 +78,7 @@ const Register = () => {
       }, 300)
     } catch (err) {
       console.error('Register error:', err)
+      setError('Registration failed. Please try again.')
     } finally {
       setIsSubmitting(false)
     }

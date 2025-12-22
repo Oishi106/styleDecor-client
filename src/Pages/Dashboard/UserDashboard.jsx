@@ -1,9 +1,12 @@
+
+
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { FaChartLine, FaCalendarCheck, FaHeart, FaCreditCard, FaUser, FaClipboardList, FaMoneyBillWave, FaArrowRight } from 'react-icons/fa'
 
 const UserDashboard = () => {
+	
 	const stats = [
 		{ label: 'Total Bookings', value: '12', icon: FaCalendarCheck, color: 'text-primary' },
 		{ label: 'Completed', value: '8', icon: FaChartLine, color: 'text-success' },
@@ -13,12 +16,13 @@ const UserDashboard = () => {
 
 	return (
 		<div className="space-y-6">
+			{/* Welcome Header Section */}
 			<div>
 				<h2 className="text-3xl font-bold mb-2">Welcome Back!</h2>
 				<p className="text-base-content/60">Here's what's happening with your account</p>
 			</div>
 
-			{/* Stats Grid */}
+			{/* Statistics Grid - 4 cards showing key metrics */}
 			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 				{stats.map((stat, idx) => {
 					const Icon = stat.icon
@@ -27,7 +31,7 @@ const UserDashboard = () => {
 							key={idx}
 							initial={{ opacity: 0, y: 20 }}
 							animate={{ opacity: 1, y: 0 }}
-							transition={{ delay: idx * 0.1 }}
+							transition={{ delay: idx * 0.1 }} // Staggered animation
 							className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow"
 						>
 							<div className="card-body">
@@ -44,8 +48,9 @@ const UserDashboard = () => {
 				})}
 			</div>
 
-			{/* Quick Access Cards */}
+			{/* Quick Access Navigation Cards */}
 			<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+				{/* My Profile Card */}
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
@@ -67,6 +72,7 @@ const UserDashboard = () => {
 					</Link>
 				</motion.div>
 
+				{/* My Bookings Card */}
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
@@ -88,6 +94,7 @@ const UserDashboard = () => {
 					</Link>
 				</motion.div>
 
+				{/* Payment History Card */}
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
@@ -110,13 +117,14 @@ const UserDashboard = () => {
 				</motion.div>
 			</div>
 
-			{/* Recent Activity */}
+			{/* Recent Activity Section */}
 			<div className="card bg-base-100 shadow-lg">
 				<div className="card-body">
 					<h3 className="card-title text-xl mb-4">Recent Bookings</h3>
 					<div className="space-y-4">
+						{/* TODO: Replace with real booking data */}
 						{[1, 2, 3].map((_, idx) => (
-							<div key={idx} className="flex items-center justify-between p-4 bg-base-200 rounded-lg">
+							<div key={idx} className="flex items-center justify-between p-4 bg-base-200 rounded-lg hover:bg-base-300 transition-colors">
 								<div className="flex items-center gap-4">
 									<div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
 										<span className="text-2xl">🎨</span>

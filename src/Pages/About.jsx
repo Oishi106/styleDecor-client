@@ -16,7 +16,7 @@ const About = () => {
             transition={{ duration: 0.6 }}
             className="text-center"
           >
-            <h1 className="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
               About StyleDecor
             </h1>
             <p className="mt-4 text-base md:text-lg text-base-content/70 max-w-2xl mx-auto">

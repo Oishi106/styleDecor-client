@@ -92,7 +92,7 @@ const Footer = () => {
             <div className="border-t border-base-content/10">
                 <div className="px-6 lg:px-12 py-6 text-center">
                     <p className="text-sm">
-                        © {new Date().getFullYear()} StyleDecor. All rights reserved. | Designed with ❤️
+                        © {new Date().getFullYear()} StyleDecor. All rights reserved. 
                     </p>
                 </div>
             </div>

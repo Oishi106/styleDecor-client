@@ -1,13 +1,19 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import { FaStar, FaMapMarkerAlt } from 'react-icons/fa'
 
 const DecoratorCard = ({ 
+    id,
     name, 
     image, 
     rating, 
     reviews, 
     location, 
-    specialization 
+    specialization,
+    bio,
+    specialties,
+    experience,
+    projects
 }) => {
     return (
         <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-all duration-300">
@@ -39,9 +45,28 @@ const DecoratorCard = ({
                     <span>{location}</span>
                 </div>
                 
-                <button className="btn btn-primary btn-sm mt-4">
+                <Link
+                    to={id ? `/decorators/${id}` : '#'}
+                    state={{
+                        decorator: {
+                            id,
+                            name,
+                            image,
+                            rating,
+                            reviews,
+                            location,
+                            specialization,
+                            bio,
+                            specialties,
+                            experience,
+                            projects
+                        }
+                    }}
+                    className="btn btn-primary btn-sm mt-4 disabled:btn-disabled"
+                    aria-disabled={!id}
+                >
                     View Profile
-                </button>
+                </Link>
             </div>
         </div>
     )

@@ -1,3 +1,18 @@
+/**
+ * PaymentHistory Component
+ * 
+ * Transaction history page for user dashboard
+ * Features:
+ * - Complete payment transaction history
+ * - Summary cards (total paid, pending, transaction count)
+ * - Detailed transaction table with status badges
+ * - Download invoice functionality
+ * - Filter and export options
+ * 
+ * Design: Clean table layout with visual status indicators
+ * Responsive: Mobile-optimized with scrollable table
+ */
+
 import React from 'react'
 import { motion } from 'framer-motion'
 import { FaDollarSign, FaCalendarAlt, FaCheckCircle, FaClock, FaTimesCircle, FaDownload, FaFilter } from 'react-icons/fa'
@@ -6,6 +21,10 @@ import { useBooking } from '../../context/BookingProvider'
 const PaymentHistory = () => {
 	const { payments } = useBooking()
 
+	/**
+	 * Get badge styling and icon based on payment status
+	 * Returns object with badge class and status icon
+	 */
 	const getStatusBadge = (status) => {
 		switch (status) {
 			case 'Completed':
@@ -19,18 +38,26 @@ const PaymentHistory = () => {
 		}
 	}
 
+	/**
+	 * Calculate total amount paid
+	 * Sums all completed transactions
+	 */
 	const totalPaid = payments
 		.filter(p => p.status === 'Completed')
 		.reduce((sum, p) => sum + parseFloat(p.amount.replace('$', '').replace(',', '')), 0)
 
+	/**
+	 * Calculate total pending amount
+	 * Sums all pending transactions
+	 */
 	const totalPending = payments
 		.filter(p => p.status === 'Pending')
 		.reduce((sum, p) => sum + parseFloat(p.amount.replace('$', '').replace(',', '')), 0)
 
 	return (
 		<div className="space-y-6">
-			{/* Header */}
-			<div className="flex items-center justify-between">
+			{/* Page Header with Action Buttons */}
+			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 				<div>
 					<h2 className="text-3xl font-bold">Payment History</h2>
 					<p className="text-base-content/60">Track all your transactions and payments</p>
@@ -47,8 +74,9 @@ const PaymentHistory = () => {
 				</div>
 			</div>
 
-			{/* Summary Cards */}
+			{/* Financial Summary Cards */}
 			<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+				{/* Total Paid Card */}
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
@@ -68,6 +96,7 @@ const PaymentHistory = () => {
 					</div>
 				</motion.div>
 
+				{/* Pending Amount Card */}
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
@@ -88,6 +117,7 @@ const PaymentHistory = () => {
 					</div>
 				</motion.div>
 
+				{/* Total Transactions Card */}
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
@@ -107,7 +137,7 @@ const PaymentHistory = () => {
 				</motion.div>
 			</div>
 
-			{/* Payment Table */}
+			{/* Payment Transactions Table */}
 			<motion.div
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
@@ -115,6 +145,7 @@ const PaymentHistory = () => {
 				className="card bg-base-100 shadow-xl"
 			>
 				<div className="card-body">
+					<h3 className="card-title text-xl mb-4">Transaction History</h3>
 					<div className="overflow-x-auto">
 						<table className="table table-zebra">
 							<thead>
@@ -153,7 +184,7 @@ const PaymentHistory = () => {
 											<td>
 												<span className="badge badge-outline">{payment.method}</span>
 											</td>
-											<td className="text-xs text-base-content/60">
+											<td className="text-xs text-base-content/60 font-mono">
 												{payment.transactionId}
 											</td>
 											<td>
@@ -163,8 +194,12 @@ const PaymentHistory = () => {
 												</span>
 											</td>
 											<td>
+												{/* Download Invoice Button (only for completed payments) */}
 												{payment.status === 'Completed' && (
-													<button className="btn btn-sm btn-ghost gap-2">
+													<button 
+														className="btn btn-sm btn-ghost gap-2 hover:btn-primary"
+														title="Download Invoice"
+													>
 														<FaDownload />
 														Invoice
 													</button>
@@ -178,6 +213,19 @@ const PaymentHistory = () => {
 					</div>
 				</div>
 			</motion.div>
+
+			{/* Empty State - Shown when no payments exist */}
+			{payments.length === 0 && (
+				<div className="card bg-base-100 shadow-xl">
+					<div className="card-body text-center py-12">
+						<p className="text-6xl mb-4">💳</p>
+						<h3 className="text-2xl font-bold mb-2">No Payment History</h3>
+						<p className="text-base-content/60 mb-4">
+							You haven't made any payments yet. Complete a booking to see your payment history here.
+						</p>
+					</div>
+				</div>
+			)}
 		</div>
 	)
 }

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
-import app, { auth, googleProvider, facebookProvider, firebaseReady } from '../lib/firebase'
+import app, { auth, googleProvider, facebookProvider, firebaseReady } from '../firebase/firebase.config.js'
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signInWithPopup, signOut } from 'firebase/auth'
 
 const AuthContext = createContext(null)
