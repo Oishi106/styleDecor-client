@@ -11,10 +11,10 @@ export const createBooking = async (bookingData) => {
   }
 }
 
-// Get user's bookings
-export const getUserBookings = async (userId) => {
+// Role-based bookings
+export const getUserBookings = async () => {
   try {
-    const response = await axiosInstance.get(`/bookings/user/${userId}`)
+    const response = await axiosInstance.get('/user/bookings')
     return response.data
   } catch (error) {
     console.error('Error fetching user bookings:', error)
@@ -22,13 +22,30 @@ export const getUserBookings = async (userId) => {
   }
 }
 
-// Get all bookings (admin only)
-export const getAllBookings = async () => {
+export const getDecoratorBookings = async (status) => {
   try {
-    const response = await axiosInstance.get('/bookings')
+    // Backend uses /decorator/jobs. Keep a fallback for older routes.
+    const params = status ? { status } : undefined
+    try {
+      const response = await axiosInstance.get('/decorator/jobs', { params })
+      return response.data
+    } catch (err) {
+      if (err?.response?.status !== 404) throw err
+      const response = await axiosInstance.get('/decorator/bookings', { params })
+      return response.data
+    }
+  } catch (error) {
+    console.error('Error fetching decorator jobs:', error)
+    throw error
+  }
+}
+
+export const getAdminBookings = async (status = 'all') => {
+  try {
+    const response = await axiosInstance.get('/admin/bookings', { params: { status } })
     return response.data
   } catch (error) {
-    console.error('Error fetching bookings:', error)
+    console.error('Error fetching admin bookings:', error)
     throw error
   }
 }

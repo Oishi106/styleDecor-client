@@ -90,7 +90,7 @@ const ServicePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-base-100 via-primary/5 to-secondary/5 py-12 px-6 lg:px-12">
+    <div className="min-h-screen bg-linear-to-br from-base-100 via-primary/5 to-secondary/5 py-12 px-6 lg:px-12">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
@@ -112,7 +112,7 @@ const ServicePage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="card bg-gradient-to-br from-base-100 to-base-50 shadow-2xl border-2 border-primary/20 p-8 mb-12"
+          className="card bg-linear-to-br from-base-100 to-base-50 shadow-2xl border-2 border-primary/20 p-8 mb-12"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Search Input */}
@@ -128,7 +128,7 @@ const ServicePage = () => {
                 placeholder="Enter service name..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="input input-bordered bg-gradient-to-r from-base-200 to-base-300 focus:outline-none focus:input-primary focus:ring-2 focus:ring-primary/50 transition-all text-base"
+                className="input input-bordered bg-linear-to-r from-base-200 to-base-300 focus:outline-none focus:input-primary focus:ring-2 focus:ring-primary/50 transition-all text-base"
               />
             </div>
 
@@ -143,7 +143,7 @@ const ServicePage = () => {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="select select-bordered bg-gradient-to-r from-base-200 to-base-300 focus:outline-none focus:select-primary focus:ring-2 focus:ring-secondary/50 transition-all text-base"
+                className="select select-bordered bg-linear-to-r from-base-200 to-base-300 focus:outline-none focus:select-primary focus:ring-2 focus:ring-secondary/50 transition-all text-base"
               >
                 {categories.map(category => (
                   <option key={category} value={category}>
@@ -238,11 +238,11 @@ const ServicePage = () => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
-            className="card bg-gradient-to-br from-base-100 to-secondary/10 shadow-2xl border-2 border-secondary/30 p-16"
+            className="card bg-linear-to-br from-base-100 to-secondary/10 shadow-2xl border-2 border-secondary/30 p-16"
           >
             <div className="flex flex-col items-center justify-center text-center">
               <div className="text-7xl mb-6 animate-bounce">🔍</div>
-              <h2 className="text-4xl font-bold mb-3 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              <h2 className="text-4xl font-bold mb-3 bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
                 No Services Found
               </h2>
               <p className="text-lg text-base-content/70 mb-8 max-w-md">

@@ -20,8 +20,6 @@ import { motion } from 'framer-motion'
 import { FaLock, FaCheckCircle } from 'react-icons/fa'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
-import { useBooking } from '../context/BookingProvider'
-import { useAuth } from '../context/AuthProvider'
 import { createPaymentIntent, confirmPayment } from '../api/paymentApi'
 
 // Initialize Stripe with public key from environment
@@ -201,7 +199,6 @@ const PaymentForm = ({ booking, service, onSuccess }) => {
 const Payment = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { addPayment } = useBooking()
   
   // Booking data passed from previous page
   const { booking, service } = location.state || {}
@@ -210,13 +207,6 @@ const Payment = () => {
   const [paymentSuccess, setPaymentSuccess] = useState(false)
 
   const handlePaymentSuccess = () => {
-    // Add payment record to context
-    addPayment({
-      service: booking?.serviceName || 'Service',
-      amount: `$${booking?.amount || '0'}`,
-      method: 'Stripe Card'
-    })
-
     setPaymentSuccess(true)
     
     // Redirect to payment history after 3 seconds
@@ -230,7 +220,7 @@ const Payment = () => {
    */
   if (paymentSuccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-success/10 to-primary/10 flex items-center justify-center px-6">
+      <div className="min-h-screen bg-linear-to-br from-success/10 to-primary/10 flex items-center justify-center px-6">
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -267,7 +257,7 @@ const Payment = () => {
    * Main Payment Form View
    */
   return (
-    <div className="min-h-screen bg-gradient-to-br from-base-100 via-primary/5 to-secondary/5 py-12 px-4 sm:px-6 lg:px-12">
+    <div className="min-h-screen bg-linear-to-br from-base-100 via-primary/5 to-secondary/5 py-12 px-4 sm:px-6 lg:px-12">
       <div className="max-w-3xl mx-auto">
         {/* Page Header */}
         <motion.div

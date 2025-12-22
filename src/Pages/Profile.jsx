@@ -1,10 +1,17 @@
 import React from 'react'
 import { motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthProvider'
 import { FaUser, FaEnvelope, FaCalendar, FaShieldAlt } from 'react-icons/fa'
 
 const Profile = () => {
+  const navigate = useNavigate()
   const { user, isMockAuth } = useAuth()
+
+  const displayName = user?.name || user?.fullName || user?.displayName || ''
+  const email = user?.email || ''
+  const photoURL = user?.photoURL || user?.photoUrl || user?.avatarUrl || ''
+  const avatarInitial = (displayName || email || 'U').charAt(0).toUpperCase()
 
   if (!user) {
     return (
@@ -17,7 +24,7 @@ const Profile = () => {
   return (
     <div className="pb-16">
       {/* Header */}
-      <section className="bg-gradient-to-br from-primary/10 via-base-100 to-secondary/10">
+      <section className="bg-linear-to-br from-primary/10 via-base-100 to-secondary/10">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -27,19 +34,19 @@ const Profile = () => {
           >
             <div className="avatar mb-4">
               <div className="w-24 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-                {user.photoURL ? (
-                  <img src={user.photoURL} alt="Profile" />
+                {photoURL ? (
+                  <img src={photoURL} alt="Profile" />
                 ) : (
                   <div className="bg-neutral text-neutral-content flex items-center justify-center text-4xl font-bold">
-                    {(user.displayName?.[0] || user.email?.[0] || 'U').toUpperCase()}
+                    {avatarInitial}
                   </div>
                 )}
               </div>
             </div>
             <h1 className="text-3xl md:text-4xl font-bold">
-              {user.displayName || 'User Profile'}
+              {displayName || 'User Profile'}
             </h1>
-            <p className="mt-2 text-base-content/70">{user.email}</p>
+            <p className="mt-2 text-base-content/70">{email}</p>
             {isMockAuth && (
               <div className="badge badge-info mt-3">Mock Session</div>
             )}
@@ -129,8 +136,18 @@ const Profile = () => {
                 </div>
               </div>
               <div className="card-actions justify-end mt-4">
-                <button className="btn btn-outline btn-sm">Edit Profile</button>
-                <button className="btn btn-primary btn-sm">View Bookings</button>
+                <button 
+                  className="btn btn-outline btn-sm"
+                  onClick={() => navigate('/dashboard/profile')}
+                >
+                  Edit Profile
+                </button>
+                <button 
+                  className="btn btn-primary btn-sm"
+                  onClick={() => navigate('/dashboard/bookings')}
+                >
+                  View Bookings
+                </button>
               </div>
             </div>
           </motion.div>

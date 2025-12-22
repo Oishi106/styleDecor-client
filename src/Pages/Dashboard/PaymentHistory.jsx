@@ -13,13 +13,61 @@
  * Responsive: Mobile-optimized with scrollable table
  */
 
-import React from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { FaDollarSign, FaCalendarAlt, FaCheckCircle, FaClock, FaTimesCircle, FaDownload, FaFilter } from 'react-icons/fa'
-import { useBooking } from '../../context/BookingProvider'
+import axiosInstance from '../../api/axiosInstance'
+import { useAuth } from '../../context/AuthProvider'
 
 const PaymentHistory = () => {
-	const { payments } = useBooking()
+	const { role, loading: authLoading } = useAuth()
+	const [bookings, setBookings] = useState([])
+	const [loading, setLoading] = useState(true)
+	const [error, setError] = useState('')
+
+	useEffect(() => {
+		if (authLoading) return
+		if (role !== 'user') {
+			setBookings([])
+			setLoading(false)
+			return
+		}
+		const fetchBookings = async () => {
+			setLoading(true)
+			setError('')
+			try {
+				const res = await axiosInstance.get('/user/bookings')
+				setBookings(Array.isArray(res.data) ? res.data : [])
+			} catch (err) {
+				setError(err?.response?.data?.message || 'Failed to load payment history')
+			} finally {
+				setLoading(false)
+			}
+		}
+		fetchBookings()
+	}, [authLoading, role])
+
+	const payments = useMemo(() => {
+		// Derive “payments” from bookings since backend is the source of truth.
+		// If backend later exposes /payments, we can switch without changing the UI.
+		return bookings
+			.filter((b) => b.paymentStatus)
+			.map((b) => ({
+				id: b.paymentId || b.transactionId || b._id || b.id,
+				service: b.roomName || b.serviceName || b.service || 'Service',
+				amount: Number(b.price || b.amount || 0),
+				date: b.paidAt || b.updatedAt || b.createdAt || b.bookingDate || b.date,
+				status:
+					b.paymentStatus === 'paid'
+						? 'Completed'
+						: b.paymentStatus === 'half-paid'
+							? 'Pending'
+							: 'Pending',
+				method: b.paymentMethod || '—',
+				transactionId: b.transactionId || '—',
+				paymentStatus: b.paymentStatus,
+			}))
+	}, [bookings])
 
 	/**
 	 * Get badge styling and icon based on payment status
@@ -43,19 +91,22 @@ const PaymentHistory = () => {
 	 * Sums all completed transactions
 	 */
 	const totalPaid = payments
-		.filter(p => p.status === 'Completed')
-		.reduce((sum, p) => sum + parseFloat(p.amount.replace('$', '').replace(',', '')), 0)
+		.filter(p => p.paymentStatus === 'paid')
+		.reduce((sum, p) => sum + (Number(p.amount) || 0), 0)
 
 	/**
 	 * Calculate total pending amount
 	 * Sums all pending transactions
 	 */
 	const totalPending = payments
-		.filter(p => p.status === 'Pending')
-		.reduce((sum, p) => sum + parseFloat(p.amount.replace('$', '').replace(',', '')), 0)
+		.filter(p => p.paymentStatus !== 'paid')
+		.reduce((sum, p) => sum + (Number(p.amount) || 0), 0)
 
 	return (
 		<div className="space-y-6">
+						{error && (
+							<div className="alert alert-error"><span>{error}</span></div>
+						)}
 			{/* Page Header with Action Buttons */}
 			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 				<div>
@@ -80,7 +131,7 @@ const PaymentHistory = () => {
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
-					className="card bg-gradient-to-br from-success to-success-focus text-white shadow-xl"
+					className="card bg-linear-to-br from-success to-success-focus text-white shadow-xl"
 				>
 					<div className="card-body">
 						<div className="flex items-center justify-between">
@@ -101,7 +152,7 @@ const PaymentHistory = () => {
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ delay: 0.1 }}
-					className="card bg-gradient-to-br from-warning to-warning-focus text-white shadow-xl"
+					className="card bg-linear-to-br from-warning to-warning-focus text-white shadow-xl"
 				>
 					<div className="card-body">
 						<div className="flex items-center justify-between">
@@ -122,7 +173,7 @@ const PaymentHistory = () => {
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ delay: 0.2 }}
-					className="card bg-gradient-to-br from-primary to-primary-focus text-white shadow-xl"
+					className="card bg-linear-to-br from-primary to-primary-focus text-white shadow-xl"
 				>
 					<div className="card-body">
 						<div className="flex items-center justify-between">
@@ -146,8 +197,11 @@ const PaymentHistory = () => {
 			>
 				<div className="card-body">
 					<h3 className="card-title text-xl mb-4">Transaction History</h3>
-					<div className="overflow-x-auto">
-						<table className="table table-zebra">
+					{loading ? (
+						<div className="flex justify-center py-10"><span className="loading loading-spinner loading-lg"></span></div>
+					) : (
+						<div className="overflow-x-auto">
+							<table className="table table-zebra">
 							<thead>
 								<tr>
 									<th>Payment ID</th>
@@ -172,13 +226,13 @@ const PaymentHistory = () => {
 											<td>
 												<div className="flex items-center gap-2">
 													<FaCalendarAlt className="text-primary" />
-													{payment.date}
+													{payment.date ? new Date(payment.date).toLocaleDateString() : '—'}
 												</div>
 											</td>
 											<td>
 												<div className="flex items-center gap-2">
 													<FaDollarSign className="text-success" />
-													<span className="font-bold text-lg">{payment.amount}</span>
+													<span className="font-bold text-lg">${Number(payment.amount || 0).toLocaleString()}</span>
 												</div>
 											</td>
 											<td>
@@ -211,11 +265,12 @@ const PaymentHistory = () => {
 							</tbody>
 						</table>
 					</div>
+						)}
 				</div>
 			</motion.div>
 
 			{/* Empty State - Shown when no payments exist */}
-			{payments.length === 0 && (
+			{!loading && payments.length === 0 && (
 				<div className="card bg-base-100 shadow-xl">
 					<div className="card-body text-center py-12">
 						<p className="text-6xl mb-4">💳</p>

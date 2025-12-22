@@ -1,18 +1,55 @@
 
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { FaChartLine, FaCalendarCheck, FaHeart, FaCreditCard, FaUser, FaClipboardList, FaMoneyBillWave, FaArrowRight } from 'react-icons/fa'
+import axiosInstance from '../../api/axiosInstance'
+import { useAuth } from '../../context/AuthProvider'
 
 const UserDashboard = () => {
 	
+	const { user, role, loading: authLoading } = useAuth()
+	const [bookings, setBookings] = useState([])
+	const [loading, setLoading] = useState(true)
+	const [error, setError] = useState('')
+
+	useEffect(() => {
+		if (authLoading) return
+		if (!user || role !== 'user') {
+			setBookings([])
+			setLoading(false)
+			return
+		}
+		const fetchBookings = async () => {
+			setLoading(true)
+			setError('')
+			try {
+				const res = await axiosInstance.get('/user/bookings')
+				setBookings(Array.isArray(res.data) ? res.data : [])
+			} catch (err) {
+				setError(err?.response?.data?.message || 'Failed to load bookings')
+			} finally {
+				setLoading(false)
+			}
+		}
+		fetchBookings()
+	}, [authLoading, user, role])
+
 	const stats = [
-		{ label: 'Total Bookings', value: '12', icon: FaCalendarCheck, color: 'text-primary' },
-		{ label: 'Completed', value: '8', icon: FaChartLine, color: 'text-success' },
-		{ label: 'Saved Services', value: '5', icon: FaHeart, color: 'text-error' },
-		{ label: 'Total Spent', value: '$2,450', icon: FaCreditCard, color: 'text-secondary' }
+		{ label: 'Total Bookings', value: String(bookings.length), icon: FaCalendarCheck, color: 'text-primary' },
+		{ label: 'Completed', value: String(bookings.filter(b => b.jobStatus === 'completed').length), icon: FaChartLine, color: 'text-success' },
+		{ label: 'Pending Payments', value: String(bookings.filter(b => b.paymentStatus === 'pending').length), icon: FaHeart, color: 'text-error' },
+		{ label: 'Total Spent', value: `$${bookings.filter(b => b.paymentStatus === 'paid').reduce((s, b) => s + (Number(b.price) || 0), 0)}`, icon: FaCreditCard, color: 'text-secondary' }
 	]
+
+	if (authLoading) {
+		return (
+			<div className="min-h-[50vh] flex items-center justify-center">
+				<span className="loading loading-spinner loading-lg text-primary"></span>
+			</div>
+		)
+	}
 
 	return (
 		<div className="space-y-6">
@@ -57,7 +94,7 @@ const UserDashboard = () => {
 					transition={{ delay: 0.4 }}
 				>
 					<Link to="/dashboard/profile">
-						<div className="card bg-gradient-to-br from-primary/10 to-primary/5 hover:shadow-xl transition-all cursor-pointer group">
+						<div className="card bg-linear-to-br from-primary/10 to-primary/5 hover:shadow-xl transition-all cursor-pointer group">
 							<div className="card-body">
 								<div className="flex items-center justify-between mb-4">
 									<FaUser className="text-4xl text-primary" />
@@ -79,7 +116,7 @@ const UserDashboard = () => {
 					transition={{ delay: 0.5 }}
 				>
 					<Link to="/dashboard/bookings">
-						<div className="card bg-gradient-to-br from-secondary/10 to-secondary/5 hover:shadow-xl transition-all cursor-pointer group">
+						<div className="card bg-linear-to-br from-secondary/10 to-secondary/5 hover:shadow-xl transition-all cursor-pointer group">
 							<div className="card-body">
 								<div className="flex items-center justify-between mb-4">
 									<FaClipboardList className="text-4xl text-secondary" />
@@ -101,7 +138,7 @@ const UserDashboard = () => {
 					transition={{ delay: 0.6 }}
 				>
 					<Link to="/dashboard/payments">
-						<div className="card bg-gradient-to-br from-accent/10 to-accent/5 hover:shadow-xl transition-all cursor-pointer group">
+						<div className="card bg-linear-to-br from-accent/10 to-accent/5 hover:shadow-xl transition-all cursor-pointer group">
 							<div className="card-body">
 								<div className="flex items-center justify-between mb-4">
 									<FaMoneyBillWave className="text-4xl text-accent" />
@@ -117,27 +154,56 @@ const UserDashboard = () => {
 				</motion.div>
 			</div>
 
-			{/* Recent Activity Section */}
+			{/* Bookings List */}
 			<div className="card bg-base-100 shadow-lg">
 				<div className="card-body">
-					<h3 className="card-title text-xl mb-4">Recent Bookings</h3>
-					<div className="space-y-4">
-						{/* TODO: Replace with real booking data */}
-						{[1, 2, 3].map((_, idx) => (
-							<div key={idx} className="flex items-center justify-between p-4 bg-base-200 rounded-lg hover:bg-base-300 transition-colors">
-								<div className="flex items-center gap-4">
-									<div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-										<span className="text-2xl">🎨</span>
+					<h3 className="card-title text-xl mb-4">My Bookings</h3>
+					{error && (
+						<div className="alert alert-error mb-4"><span>{error}</span></div>
+					)}
+					{loading ? (
+						<div className="flex justify-center py-8">
+							<span className="loading loading-spinner loading-lg"></span>
+						</div>
+					) : (
+						<div className="space-y-4">
+							{bookings.map((b) => (
+								<div key={b._id} className="flex items-center justify-between p-4 bg-base-200 rounded-lg hover:bg-base-300 transition-colors">
+									<div className="flex items-center gap-4">
+										<div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
+											<span className="text-2xl">🎨</span>
+										</div>
+										<div>
+											<p className="font-semibold">{b.roomName || b.serviceName}</p>
+											<p className="text-sm text-base-content/60">Price: ${b.price}</p>
+											<p className="text-xs text-base-content/60">Payment: {b.paymentStatus} • Job: {b.jobStatus}</p>
+											{b.decoratorName && (
+												<p className="text-xs text-base-content/60">Decorator: {b.decoratorName}</p>
+											)}
+										</div>
 									</div>
-									<div>
-										<p className="font-semibold">Living Room Makeover</p>
-										<p className="text-sm text-base-content/60">Booked on Dec {15 - idx}, 2025</p>
+									<div className="flex items-center gap-2">
+										<Link to={`/dashboard/bookings/${b._id}`} className="btn btn-ghost btn-sm">View Details</Link>
+										{b.paymentStatus === 'pending' && (
+											(() => {
+												const displayName = user?.name || user?.displayName
+												const canPay = !!(user && displayName && user.email)
+												return (
+													<Link
+														to="/stripe-payment"
+														state={{ booking: { _id: b._id, price: b.price, name: displayName, email: user?.email, roomName: b.roomName } }}
+														className={`btn btn-primary btn-sm ${authLoading || !canPay ? 'btn-disabled pointer-events-none' : ''}`}
+													>
+														{authLoading ? 'Loading…' : 'Pay Now'}
+													</Link>
+												)
+											})()
+										)}
 									</div>
 								</div>
-								<div className="badge badge-success">Completed</div>
-							</div>
-						))}
-					</div>
+							))}
+						</div>
+					)}
 					<div className="mt-6">
 						<Link to="/dashboard/bookings" className="btn btn-primary btn-block">
 							View All Bookings

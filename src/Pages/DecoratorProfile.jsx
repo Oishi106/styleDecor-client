@@ -42,7 +42,7 @@ const DecoratorProfile = () => {
           className="card bg-base-100 shadow-2xl overflow-hidden"
         >
           <div className="grid grid-cols-1 lg:grid-cols-3">
-            <div className="p-8 bg-gradient-to-br from-primary/10 to-secondary/10 flex flex-col items-center">
+            <div className="p-8 bg-linear-to-br from-primary/10 to-secondary/10 flex flex-col items-center">
               <div className="avatar mb-4">
                 <div className="w-28 h-28 rounded-full ring ring-primary ring-offset-2 ring-offset-base-100">
                   <img src={decorator.image} alt={decorator.name} className="object-cover" />

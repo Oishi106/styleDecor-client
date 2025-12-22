@@ -7,7 +7,7 @@ const About = () => {
   return (
     <div className="pb-16">
       {/* Hero */}
-      <section className="bg-gradient-to-br from-primary/10 via-base-100 to-secondary/10">
+      <section className="bg-linear-to-br from-primary/10 via-base-100 to-secondary/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -16,7 +16,7 @@ const About = () => {
             transition={{ duration: 0.6 }}
             className="text-center"
           >
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            <h1 className="text-4xl md:text-5xl font-bold bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
               About StyleDecor
             </h1>
             <p className="mt-4 text-base md:text-lg text-base-content/70 max-w-2xl mx-auto">
@@ -155,7 +155,7 @@ const About = () => {
 
       {/* CTA */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="hero rounded-2xl bg-gradient-to-r from-primary/15 via-base-100 to-secondary/15">
+        <div className="hero rounded-2xl bg-linear-to-r from-primary/15 via-base-100 to-secondary/15">
           <div className="hero-content text-center py-12 lg:py-16">
             <div className="max-w-2xl">
               <h2 className="text-3xl md:text-4xl font-bold mb-3">Ready to Transform Your Space?</h2>

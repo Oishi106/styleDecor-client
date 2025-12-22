@@ -1,5 +1,5 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthProvider'
 import { FaShieldAlt } from 'react-icons/fa'
 
@@ -12,13 +12,32 @@ const navLinks = [
 
 const Navbar = () => {
     const { user, logout } = useAuth()
+    const navigate = useNavigate()
+
+    const displayName = user?.name || user?.fullName || user?.displayName || ''
+    const email = user?.email || ''
+    const photoURL = user?.photoURL || user?.photoUrl || user?.avatarUrl || ''
+    const avatarInitial = (displayName || email || 'U').charAt(0).toUpperCase()
+
+    const handleLogout = async () => {
+        try {
+            await logout()
+        } finally {
+            navigate('/login', { replace: true })
+        }
+    }
 
     const renderLinks = () => (
         navLinks.map((link) => (
             <li key={link.name}>
-                <Link to={link.to} className="font-medium">
+                <NavLink 
+                    to={link.to} 
+                    className={({ isActive }) => 
+                        `font-medium ${isActive ? 'bg-primary text-primary-content' : ''}`
+                    }
+                >
                     {link.name}
-                </Link>
+                </NavLink>
             </li>
         ))
     )
@@ -52,7 +71,7 @@ const Navbar = () => {
                                         </Link>
                                     </li>
                                     <li className="mt-2">
-                                        <button onClick={logout} className="btn btn-outline btn-sm justify-center">
+                                        <button onClick={handleLogout} className="btn btn-outline btn-sm justify-center">
                                             Logout
                                         </button>
                                     </li>
@@ -71,7 +90,7 @@ const Navbar = () => {
                                         <li><a>Profile</a></li>
                                         <li><a>Settings</a></li>
                                         {user ? (
-                                            <li><button onClick={logout}>Logout</button></li>
+                                            <li><button onClick={handleLogout}>Logout</button></li>
                                         ) : (
                                             <li><Link to="/login">Login</Link></li>
                                         )}
@@ -106,13 +125,13 @@ const Navbar = () => {
                     {user ? (
                         <div className="dropdown dropdown-end">
                             <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
-                                {user.photoURL ? (
+                                {photoURL ? (
                                     <div className="w-10 rounded-full">
-                                        <img alt="avatar" src={user.photoURL} />
+                                        <img alt="avatar" src={photoURL} />
                                     </div>
                                 ) : (
                                     <div className="bg-neutral text-neutral-content w-10 rounded-full flex items-center justify-center">
-                                        {(user.displayName?.[0] || user.email?.[0] || 'U').toUpperCase()}
+                                        {avatarInitial}
                                     </div>
                                 )}
                             </div>
@@ -121,10 +140,10 @@ const Navbar = () => {
                                 className="menu menu-sm dropdown-content mt-3 w-52 rounded-box bg-base-100 p-3 shadow z-10"
                             >
                                 <li className="menu-title">Account</li>
-                                <li><a>{user.displayName || user.email}</a></li>
+                                <li><a>{displayName || email || 'Account'}</a></li>
                                 <li><Link to="/profile">My Profile</Link></li>
                                 <li><Link to="/dashboard">Dashboard</Link></li>
-                                <li><button onClick={logout}>Logout</button></li>
+                                <li><button onClick={handleLogout}>Logout</button></li>
                             </ul>
                         </div>
                     ) : null}

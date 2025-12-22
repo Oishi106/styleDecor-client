@@ -16,7 +16,7 @@ const DecoratorCard = ({
     projects
 }) => {
     return (
-        <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-all duration-300">
+        <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col">
             <figure className="px-6 pt-6">
                 <div className="avatar">
                     <div className="w-24 h-24 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
@@ -29,7 +29,7 @@ const DecoratorCard = ({
                 </div>
             </figure>
             
-            <div className="card-body items-center text-center">
+            <div className="card-body items-center text-center flex flex-col flex-1">
                 <h2 className="card-title text-lg">{name}</h2>
                 
                 <div className="badge badge-outline badge-sm">{specialization}</div>
@@ -62,7 +62,7 @@ const DecoratorCard = ({
                             projects
                         }
                     }}
-                    className="btn btn-primary btn-sm mt-4 disabled:btn-disabled"
+                    className="btn btn-primary btn-sm disabled:btn-disabled mt-auto"
                     aria-disabled={!id}
                 >
                     View Profile

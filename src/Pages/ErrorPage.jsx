@@ -9,8 +9,8 @@ const ErrorPage = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-base-200 px-6 py-16">
       <div className="text-center max-w-xl">
-        <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-primary/15 to-secondary/15 mb-6">
-          <span className="text-4xl font-extrabold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+        <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-linear-to-br from-primary/15 to-secondary/15 mb-6">
+          <span className="text-4xl font-extrabold bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
             {status}
           </span>
         </div>

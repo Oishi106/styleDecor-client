@@ -33,23 +33,12 @@ import { useAuth } from '../context/AuthProvider'
 const DashboardLayout = () => {
 	const [sidebarOpen, setSidebarOpen] = useState(false)
 	const [isLoading, setIsLoading] = useState(false)
-	const { user, logout, loading: authLoading } = useAuth()
+	const { user, role, logout, loading: authLoading } = useAuth()
 	const location = useLocation()
 	const navigate = useNavigate()
 
-	// Determine user role
-	const getUserRole = () => {
-		if (!user) return null
-		if (user?.email?.endsWith('@admin.com') || user?.uid === 'admin-user') {
-			return 'admin'
-		}
-		if (user?.role === 'decorator') {
-			return 'decorator'
-		}
-		return 'user'
-	}
-
-	const userRole = getUserRole()
+	// Determine role strictly from backend-provided auth state
+	const userRole = role
 
 	// Role-based menu configuration
 	const roleBasedMenus = {
@@ -57,10 +46,10 @@ const DashboardLayout = () => {
 			{
 				title: 'Dashboard',
 				icon: FaHome,
-				href: '/dashboard',
+				href: '/dashboard/user',
 				section: 'user',
 				items: [
-					{ label: 'Overview', href: '/dashboard' },
+					{ label: 'Overview', href: '/dashboard/user' },
 					{ label: 'My Profile', href: '/dashboard/profile' },
 					{ label: 'My Bookings', href: '/dashboard/bookings' },
 					{ label: 'Payment History', href: '/dashboard/payments' },
@@ -72,14 +61,13 @@ const DashboardLayout = () => {
 			{
 				title: 'Admin Panel',
 				icon: FaShieldAlt,
-				href: '/admin',
+				href: '/dashboard/admin',
 				section: 'admin',
 				items: [
-					{ label: 'Overview', href: '/admin' },
-					{ label: 'Manage Decorators', href: '/admin' },
-					{ label: 'Manage Services', href: '/admin' },
-					{ label: 'Bookings & Assignment', href: '/admin' },
-					{ label: 'Analytics', href: '/admin' },
+					{ label: 'Overview', href: '/dashboard/admin' },
+					{ label: 'Decorator Applications', href: '/dashboard/admin' },
+					{ label: 'Bookings', href: '/dashboard/admin' },
+					{ label: 'Add Decorator', href: '/dashboard/admin' },
 				],
 			},
 		],
@@ -90,11 +78,7 @@ const DashboardLayout = () => {
 				href: '/dashboard/decorator',
 				section: 'decorator',
 				items: [
-					{ label: 'My Assigned Projects', href: '/dashboard/decorator' },
-					{ label: "Today's Schedule", href: '/dashboard/decorator' },
-					{ label: 'Project Status', href: '/dashboard/decorator' },
-					{ label: 'Earnings Summary', href: '/dashboard/decorator' },
-					{ label: 'Completed Projects', href: '/dashboard/decorator' },
+					{ label: 'My Assigned Bookings', href: '/dashboard/decorator' },
 				],
 			},
 		],
@@ -124,7 +108,7 @@ const DashboardLayout = () => {
 		try {
 			setIsLoading(true)
 			await logout()
-			navigate('/')
+			navigate('/login')
 		} catch (error) {
 			console.error('Logout error:', error)
 		} finally {
@@ -229,7 +213,7 @@ const DashboardLayout = () => {
 				initial="visible"
 				animate={sidebarOpen ? 'visible' : 'hidden'}
 				transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-				className="fixed lg:static w-64 h-screen bg-gradient-to-b from-neutral to-neutral-900 text-neutral-content flex flex-col z-40 lg:z-auto"
+				className="fixed lg:static w-64 h-screen bg-linear-to-b from-neutral to-neutral-900 text-neutral-content flex flex-col z-40 lg:z-auto"
 			>
 				{/* Sidebar Header */}
 				<div className="p-6 border-b border-neutral-700 flex items-center justify-between">
@@ -239,9 +223,7 @@ const DashboardLayout = () => {
 						</div>
 						<div>
 							<h3 className="font-bold text-lg text-white">StyleDecor</h3>
-							<p className="text-xs text-neutral-300 capitalize">
-								{userRole} Portal
-							</p>
+							<p className="text-xs text-neutral-300 capitalize">{userRole} Portal</p>
 						</div>
 					</div>
 					<button
@@ -451,15 +433,16 @@ const DashboardLayout = () => {
 
 				{/* Main Content Area */}
 				<div className="flex-1 overflow-y-auto bg-base-50">
-					<motion.div
-						key={location.pathname}
-						initial={{ opacity: 0, y: 10 }}
-						animate={{ opacity: 1, y: 0 }}
-						transition={{ duration: 0.3 }}
-						className="p-4 lg:p-6 max-w-7xl mx-auto"
-					>
-						<Outlet />
-					</motion.div>
+					<div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8" style={{ maxWidth: '1280px' }}>
+						<motion.div
+							key={location.pathname}
+							initial={{ opacity: 0, y: 10 }}
+							animate={{ opacity: 1, y: 0 }}
+							transition={{ duration: 0.3 }}
+						>
+							<Outlet />
+						</motion.div>
+					</div>
 				</div>
 			</div>
 		</div>

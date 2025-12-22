@@ -18,7 +18,6 @@ import { motion } from 'framer-motion'
 import { FaLock, FaCheckCircle, FaCreditCard, FaApple, FaGoogle, FaArrowLeft } from 'react-icons/fa'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
-import { useBooking } from '../context/BookingProvider'
 import { useAuth } from '../context/AuthProvider'
 import { createPaymentIntent, confirmPayment } from '../api/paymentApi'
 
@@ -198,7 +197,7 @@ const PaymentForm = ({ booking, service, paymentMethod, onSuccess }) => {
 const StripePayment = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { addPayment } = useBooking()
+  const { user, loading: authLoading } = useAuth()
   
   // Booking data passed from booking page
   const { booking, service } = location.state || {}
@@ -215,13 +214,10 @@ const StripePayment = () => {
     }
   }, [booking])
 
-  const handlePaymentSuccess = () => {
-    addPayment({
-      service: booking?.roomName || 'Service',
-      amount: `$${booking?.price || '0'}`,
-      method: 'Stripe Card'
-    })
+  const displayName = user?.name || user?.displayName
+  const userReady = !!(user && displayName && user.email)
 
+  const handlePaymentSuccess = () => {
     setPaymentSuccess(true)
     
     // Redirect to payment history after 3 seconds
@@ -235,7 +231,7 @@ const StripePayment = () => {
    */
   if (paymentSuccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-success/10 to-primary/10 flex items-center justify-center px-6">
+      <div className="min-h-screen bg-linear-to-br from-success/10 to-primary/10 flex items-center justify-center px-6">
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -273,7 +269,7 @@ const StripePayment = () => {
    */
   if (!isPageValid) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-base-100 via-primary/5 to-secondary/5 flex items-center justify-center px-6">
+      <div className="min-h-screen bg-linear-to-br from-base-100 via-primary/5 to-secondary/5 flex items-center justify-center px-6">
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -295,11 +291,39 @@ const StripePayment = () => {
     )
   }
 
+  // Auth gating before rendering payment UI
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <span className="loading loading-spinner loading-lg text-primary"></span>
+      </div>
+    )
+  }
+
+  if (!userReady) {
+    return (
+      <div className="min-h-screen bg-linear-to-br from-base-100 via-primary/5 to-secondary/5 flex items-center justify-center px-6">
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.6 }}
+          className="card bg-base-100 shadow-2xl max-w-lg w-full text-center p-12"
+        >
+          <h1 className="text-3xl font-bold mb-4">User Information Incomplete</h1>
+          <p className="text-lg text-base-content/70 mb-8">
+            User information incomplete. Please wait or re-login.
+          </p>
+          <button onClick={() => navigate('/login')} className="btn btn-primary btn-lg w-full">Go to Login</button>
+        </motion.div>
+      </div>
+    )
+  }
+
   /**
    * Main Payment Page View
    */
   return (
-    <div className="min-h-screen bg-gradient-to-br from-base-100 via-primary/5 to-secondary/5 py-12 px-4 sm:px-6 lg:px-12">
+    <div className="min-h-screen bg-linear-to-br from-base-100 via-primary/5 to-secondary/5 py-12 px-4 sm:px-6 lg:px-12">
       <div className="max-w-5xl mx-auto">
         {/* Header with Back Button */}
         <motion.div
@@ -424,7 +448,7 @@ const StripePayment = () => {
                 <h2 className="text-2xl font-bold mb-6">Card Information</h2>
                 <Elements stripe={stripePromise}>
                   <PaymentForm 
-                    booking={booking} 
+                    booking={{ ...booking, name: displayName, email: user.email }}
                     service={service}
                     paymentMethod={paymentMethod}
                     onSuccess={handlePaymentSuccess}
@@ -493,7 +517,7 @@ const StripePayment = () => {
               </div>
 
               {/* Total Amount */}
-              <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-4 rounded-lg mb-6">
+              <div className="bg-linear-to-r from-primary/10 to-secondary/10 p-4 rounded-lg mb-6">
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-bold">Total Amount</span>
                   <span className="text-3xl font-bold text-primary">

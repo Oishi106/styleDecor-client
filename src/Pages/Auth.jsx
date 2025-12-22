@@ -1,35 +1,36 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { FaEnvelope, FaLock, FaUser, FaPhone, FaLink, FaInfoCircle } from 'react-icons/fa'
-import { loginRequest, registerRequest, applyDecoratorRequest } from '../api/authApi'
-
-const TABS = ['admin', 'user', 'decorator']
+import { registerRequest, applyDecoratorRequest } from '../api/authApi'
+import { useAuth } from '../context/AuthProvider'
 
 const initialForms = {
-  admin: { email: '', password: '' },
   userLogin: { email: '', password: '' },
-  userRegister: { name: '', email: '', password: '' },
-  decoratorLogin: { email: '', password: '' },
+  userRegister: { name: '', email: '', password: '', photoUrl: '' },
   decoratorApply: { name: '', email: '', phone: '', experience: '', portfolio: '', bio: '' }
 }
 
 const Auth = () => {
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState('admin')
+  const location = useLocation()
+  const { login, refreshMe, role } = useAuth()
   const [isUserRegister, setIsUserRegister] = useState(false)
   const [isDecoratorApply, setIsDecoratorApply] = useState(false)
   const [forms, setForms] = useState(initialForms)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [userPreview, setUserPreview] = useState('')
 
-  // reset form and mode when tab changes
-  useEffect(() => {
+  const resetModes = () => {
     setForms(initialForms)
     setError('')
-    setIsUserRegister(false)
-    setIsDecoratorApply(false)
-  }, [activeTab])
+    setUserPreview('')
+  }
+
+  useEffect(() => {
+    if (!isUserRegister) setUserPreview('')
+  }, [isUserRegister])
 
   const handleChange = (formKey, field, value) => {
     setForms((prev) => ({
@@ -42,17 +43,38 @@ const Auth = () => {
     setError('')
   }
 
-  const saveAuth = (data) => {
-    const { token, role, user } = data || {}
-    if (token) localStorage.setItem('authToken', token)
-    if (role) localStorage.setItem('role', role)
-    if (user) localStorage.setItem('user', JSON.stringify(user))
+  const handleUserPhotoUrlChange = (value) => {
+    setForms((prev) => ({
+      ...prev,
+      userRegister: {
+        ...prev.userRegister,
+        photoUrl: value
+      }
+    }))
+    setUserPreview(value || '')
+    setError('')
   }
 
-  const redirectByRole = (role) => {
-    if (role === 'admin') return navigate('/admin/dashboard', { replace: true })
-    if (role === 'decorator') return navigate('/decorator/dashboard', { replace: true })
-    return navigate('/dashboard', { replace: true })
+  const clearUserPhoto = () => {
+    setForms((prev) => ({
+      ...prev,
+      userRegister: { ...prev.userRegister, photoUrl: '' }
+    }))
+    setUserPreview('')
+  }
+
+  const dashboardPathByRole = (r) => {
+    if (r === 'admin') return '/dashboard/admin'
+    if (r === 'decorator') return '/dashboard/decorator'
+    return '/dashboard/user'
+  }
+
+  const requiredRoleFromPath = (path) => {
+    if (!path) return null
+    if (path.startsWith('/dashboard/admin')) return 'admin'
+    if (path.startsWith('/dashboard/decorator')) return 'decorator'
+    if (path.startsWith('/dashboard/user')) return 'user'
+    return null
   }
 
   const handleSubmit = async (e) => {
@@ -60,56 +82,55 @@ const Auth = () => {
     setLoading(true)
     setError('')
     try {
-      if (activeTab === 'admin') {
-        const { email, password } = forms.admin
-        if (!email || !password) throw new Error('Email and password are required')
-        const res = await loginRequest(email, password)
-        saveAuth(res)
-        redirectByRole(res.role || 'admin')
+      if (isDecoratorApply) {
+        const { name, email, phone, experience, portfolio, bio } = forms.decoratorApply
+        if (!name || !email || !phone || !experience || !bio) throw new Error('Please fill all required fields')
+        await applyDecoratorRequest({
+          name,
+          email,
+          phone,
+          experience,
+          portfolio,
+          bio
+        })
+        setError('Application submitted. We will review and get back to you.')
+        setIsDecoratorApply(false)
         return
       }
 
-      if (activeTab === 'user') {
-        if (isUserRegister) {
-          const { name, email, password } = forms.userRegister
-          if (!name || !email || !password) throw new Error('All fields are required')
-          await registerRequest({ name, email, password })
-          const loginRes = await loginRequest(email, password)
-          saveAuth(loginRes)
-          redirectByRole(loginRes.role || 'user')
-        } else {
-          const { email, password } = forms.userLogin
-          if (!email || !password) throw new Error('Email and password are required')
-          const res = await loginRequest(email, password)
-          saveAuth(res)
-          redirectByRole(res.role || 'user')
-        }
+      if (isUserRegister) {
+        const { name, email, password } = forms.userRegister
+        if (!name || !email || !password) throw new Error('All fields are required')
+        await registerRequest({ name, email, password, photoUrl: forms.userRegister.photoUrl })
+        await login(email, password)
+        const me = await refreshMe()
+        navigate(dashboardPathByRole(me?.role || role || 'user'), { replace: true })
         return
       }
 
-      if (activeTab === 'decorator') {
-        if (isDecoratorApply) {
-          const { name, email, phone, experience, portfolio, bio } = forms.decoratorApply
-          if (!name || !email || !phone || !experience || !bio) throw new Error('Please fill all required fields')
-          await applyDecoratorRequest({
-            name,
-            email,
-            phone,
-            experience,
-            portfolio,
-            bio
-          })
-          setError('Application submitted. We will review and get back to you.')
-          setIsDecoratorApply(false)
-        } else {
-          const { email, password } = forms.decoratorLogin
-          if (!email || !password) throw new Error('Email and password are required')
-          const res = await loginRequest(email, password)
-          saveAuth(res)
-          redirectByRole(res.role || 'decorator')
-        }
+      const { email, password } = forms.userLogin
+      if (!email || !password) throw new Error('Email and password are required')
+      await login(email, password)
+      const me = await refreshMe()
+      const resolvedRole = me?.role || role
+
+      const from = location.state?.from?.pathname
+      const requiredRole = requiredRoleFromPath(from)
+      if (requiredRole && resolvedRole && requiredRole !== resolvedRole) {
+        navigate('/unauthorized', {
+          replace: true,
+          state: { requiredRole, actualRole: resolvedRole, from: location.state?.from }
+        })
         return
       }
+
+      if (from) {
+        navigate(from, { replace: true })
+        return
+      }
+
+      navigate(dashboardPathByRole(resolvedRole || 'user'), { replace: true })
+      return
     } catch (err) {
       const msg = err?.response?.data?.message || err.message || 'Something went wrong'
       setError(msg)
@@ -119,10 +140,10 @@ const Auth = () => {
   }
 
   const currentFormKey = useMemo(() => {
-    if (activeTab === 'admin') return 'admin'
-    if (activeTab === 'user') return isUserRegister ? 'userRegister' : 'userLogin'
-    return isDecoratorApply ? 'decoratorApply' : 'decoratorLogin'
-  }, [activeTab, isUserRegister, isDecoratorApply])
+    if (isDecoratorApply) return 'decoratorApply'
+    if (isUserRegister) return 'userRegister'
+    return 'userLogin'
+  }, [isUserRegister, isDecoratorApply])
 
   const renderFields = () => {
     const form = forms[currentFormKey]
@@ -150,7 +171,7 @@ const Auth = () => {
               onChange={(e) => handleChange(currentFormKey, 'password', e.target.value)}
               className={inputClass}
               disabled={loading}
-              autoComplete={activeTab === 'admin' ? 'current-password' : 'password'}
+              autoComplete="current-password"
             />
           </label>
         </>
@@ -193,6 +214,28 @@ const Auth = () => {
               autoComplete="new-password"
             />
           </label>
+          <label className="form-control w-full">
+            <span className="label-text font-semibold flex items-center gap-2"><FaLink className="text-accent" /> Photo URL (optional)</span>
+            <input
+              type="url"
+              value={form.photoUrl}
+              onChange={(e) => handleUserPhotoUrlChange(e.target.value)}
+              className={inputClass}
+              disabled={loading}
+              placeholder="https://your-photo.jpg"
+              autoComplete="off"
+            />
+          </label>
+          {userPreview && (
+            <div className="flex items-center gap-3">
+              <div className="avatar">
+                <div className="w-16 rounded-full ring ring-primary/40 ring-offset-base-100 ring-offset-2">
+                  <img src={userPreview} alt="preview" />
+                </div>
+              </div>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={clearUserPhoto} disabled={loading}>Remove</button>
+            </div>
+          )}
         </>
       )
     }
@@ -269,23 +312,15 @@ const Auth = () => {
     )
   }
 
-  const heading = activeTab === 'admin'
-    ? 'Admin Login'
-    : activeTab === 'user'
-      ? isUserRegister ? 'Create your account' : 'User Login'
-      : isDecoratorApply ? 'Apply as Decorator' : 'Decorator Login'
+  const heading = isDecoratorApply ? 'Apply as Decorator' : isUserRegister ? 'Create your account' : 'Login'
 
-  const primaryCta = activeTab === 'admin'
-    ? 'Login as Admin'
-    : activeTab === 'user'
-      ? isUserRegister ? 'Register' : 'Login'
-      : isDecoratorApply ? 'Apply as Decorator' : 'Login as Decorator'
+  const primaryCta = isDecoratorApply ? 'Apply as Decorator' : isUserRegister ? 'Register' : 'Login'
 
-  const toggleCta = activeTab === 'user'
-    ? isUserRegister ? 'Already have an account? Login' : "Don't have an account? Register"
-    : activeTab === 'decorator'
-      ? isDecoratorApply ? 'Already a decorator? Login' : 'Want to become a decorator? Apply'
-      : ''
+  const toggleCta = isDecoratorApply
+    ? 'Back to Login'
+    : isUserRegister
+      ? 'Already have an account? Login'
+      : "Don't have an account? Register"
 
   return (
     <div className="min-h-screen bg-base-200 flex items-center justify-center py-12 px-4">
@@ -296,27 +331,28 @@ const Auth = () => {
           className="card bg-base-100 shadow-2xl border border-base-300 overflow-hidden"
         >
           <div className="grid grid-cols-1 lg:grid-cols-2">
-            <div className="p-8 lg:p-10 border-b lg:border-b-0 lg:border-r border-base-200 bg-gradient-to-br from-primary/5 via-base-100 to-secondary/10">
-              <div className="flex gap-2 mb-6">
-                {TABS.map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`btn btn-sm ${activeTab === tab ? 'btn-primary' : 'btn-ghost'}`}
-                    disabled={loading}
-                  >
-                    {tab === 'admin' && 'Admin'}
-                    {tab === 'user' && 'User'}
-                    {tab === 'decorator' && 'Decorator'}
-                  </button>
-                ))}
+            <div className="p-8 lg:p-10 border-b lg:border-b-0 lg:border-r border-base-200 bg-linear-to-br from-primary/5 via-base-100 to-secondary/10">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+                <div className="p-3 rounded-lg bg-base-100 border border-base-300">
+                  <p className="font-semibold">👤 User</p>
+                  <p className="text-xs text-base-content/60">Book decorations</p>
+                </div>
+                <div className="p-3 rounded-lg bg-base-100 border border-base-300">
+                  <p className="font-semibold">🎨 Decorator</p>
+                  <p className="text-xs text-base-content/60">Manage services</p>
+                </div>
+                <div className="p-3 rounded-lg bg-base-100 border border-base-300">
+                  <p className="font-semibold">🛠 Admin</p>
+                  <p className="text-xs text-base-content/60">System control</p>
+                </div>
               </div>
-
               <h2 className="text-3xl font-bold mb-2">{heading}</h2>
               <p className="text-base-content/70 mb-6">
-                {activeTab === 'admin' && 'Admins can only login with their issued credentials.'}
-                {activeTab === 'user' && (isUserRegister ? 'Create a new user account.' : 'Login to your user account.')}
-                {activeTab === 'decorator' && (isDecoratorApply ? 'Submit your application to become a decorator.' : 'Login to your decorator account.')}
+                {isDecoratorApply
+                  ? 'Submit your application to become a decorator.'
+                  : isUserRegister
+                    ? 'Create a new user account.'
+                    : 'Login to your account.'}
               </p>
 
               {error && (
@@ -348,12 +384,33 @@ const Auth = () => {
                 <button
                   className="btn btn-ghost btn-sm mt-3"
                   onClick={() => {
-                    if (activeTab === 'user') setIsUserRegister((p) => !p)
-                    if (activeTab === 'decorator') setIsDecoratorApply((p) => !p)
+                    if (isDecoratorApply) {
+                      setIsDecoratorApply(false)
+                      setIsUserRegister(false)
+                      resetModes()
+                      return
+                    }
+                    setIsDecoratorApply(false)
+                    setIsUserRegister((p) => !p)
+                    resetModes()
                   }}
                   disabled={loading}
                 >
                   {toggleCta}
+                </button>
+              )}
+
+              {!isDecoratorApply && (
+                <button
+                  className="btn btn-ghost btn-sm mt-1"
+                  onClick={() => {
+                    setIsUserRegister(false)
+                    setIsDecoratorApply(true)
+                    resetModes()
+                  }}
+                  disabled={loading}
+                >
+                  Want to become a decorator? Apply
                 </button>
               )}
             </div>

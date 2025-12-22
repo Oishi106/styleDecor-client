@@ -15,7 +15,8 @@ import CoverageMap from '../Pages/CoverageMap'
 import Register from '../Pages/Register'
 import PrivateRoutes from './PrivateRoutes'
 import AdminRoute from './AdminRoute'
-import Login from '../Pages/Login'
+import DecoratorRoute from './DecoratorRoute'
+import UserRoute from './UserRoute'
 import Profile from '../Pages/Profile'
 import Auth from '../Pages/Auth'
 import DashboardSelector from '../Pages/DashboardSelector'
@@ -26,6 +27,7 @@ import DecoratorProfile from '../Pages/DecoratorProfile'
 import MyProfile from '../Pages/Dashboard/MyProfile'
 import MyBookings from '../Pages/Dashboard/MyBookings'
 import PaymentHistory from '../Pages/Dashboard/PaymentHistory'
+import Unauthorized from '../Pages/Unauthorized'
 
 const router = createBrowserRouter([
     {
@@ -88,11 +90,15 @@ const router = createBrowserRouter([
             },
             {
                 path: 'register',
-                element: <Auth />,
+                element: <Register />,
             },
             {
                 path: 'login',
                 element: <Auth />,
+            },
+            {
+                path: 'unauthorized',
+                element: <Unauthorized />,
             },
             {
                 path: 'profile',
@@ -123,121 +129,78 @@ const router = createBrowserRouter([
             },
             {
                 path: 'user',
-                element: <UserDashboard />,
+                element: (
+                    <UserRoute>
+                        <UserDashboard />
+                    </UserRoute>
+                ),
             },
             {
                 path: 'admin',
-                element: <AdminDashboard />,
+                element: (
+                    <AdminRoute>
+                        <AdminDashboard />
+                    </AdminRoute>
+                ),
             },
             {
                 path: 'decorator',
-                element: <DecoratorDashboard />,
+                element: (
+                    <DecoratorRoute>
+                        <DecoratorDashboard />
+                    </DecoratorRoute>
+                ),
             },
             {
                 path: 'profile',
-                element: <MyProfile />,
+                element: (
+                    <UserRoute>
+                        <MyProfile />
+                    </UserRoute>
+                ),
             },
             {
                 path: 'bookings',
-                element: <MyBookings />,
+                element: (
+                    <UserRoute>
+                        <MyBookings />
+                    </UserRoute>
+                ),
             },
             {
                 path: 'payments',
-                element: <PaymentHistory />,
+                element: (
+                    <UserRoute>
+                        <PaymentHistory />
+                    </UserRoute>
+                ),
             },
             {
                 path: 'saved',
-                element: <div className="p-6"><h2 className="text-2xl font-bold">Saved Services</h2></div>,
+                element: (
+                    <UserRoute>
+                        <div className="p-6"><h2 className="text-2xl font-bold">Saved Services</h2></div>
+                    </UserRoute>
+                ),
             },
         ],
     },
+    // Legacy redirects (backwards compatibility)
     {
         path: '/admin',
-        element: (
-            <AdminRoute>
-                <DashboardLayout />
-            </AdminRoute>
-        ),
-        children: [
-            {
-                index: true,
-                element: <AdminDashboard />,
-            },
-            {
-                path: 'users',
-                element: <div className="p-6"><h2 className="text-2xl font-bold">Manage Users</h2></div>,
-            },
-            {
-                path: 'services',
-                element: <div className="p-6"><h2 className="text-2xl font-bold">Manage Services</h2></div>,
-            },
-            {
-                path: 'bookings',
-                element: <div className="p-6"><h2 className="text-2xl font-bold">All Bookings</h2></div>,
-            },
-            {
-                path: 'analytics',
-                element: <div className="p-6"><h2 className="text-2xl font-bold">Analytics</h2></div>,
-            },
-        ],
+        element: <DashboardSelector />,
     },
     {
         path: '/admin/dashboard',
-        element: (
-            <AdminRoute>
-                <DashboardLayout />
-            </AdminRoute>
-        ),
-        children: [
-            {
-                index: true,
-                element: <AdminDashboard />,
-            },
-        ],
+        element: <DashboardSelector />,
     },
     {
         path: '/decorator',
-        element: (
-            <PrivateRoutes>
-                <DashboardLayout />
-            </PrivateRoutes>
-        ),
-        children: [
-            {
-                index: true,
-                element: <DecoratorDashboard />,
-            },
-            {
-                path: 'services',
-                element: <div className="p-6"><h2 className="text-2xl font-bold">My Services</h2></div>,
-            },
-            {
-                path: 'bookings',
-                element: <div className="p-6"><h2 className="text-2xl font-bold">My Bookings</h2></div>,
-            },
-            {
-                path: 'reviews',
-                element: <div className="p-6"><h2 className="text-2xl font-bold">Reviews</h2></div>,
-            },
-            {
-                path: 'earnings',
-                element: <div className="p-6"><h2 className="text-2xl font-bold">Earnings</h2></div>,
-            },
-        ],
+        element: <DashboardSelector />,
     },
     {
         path: '/decorator/dashboard',
-        element: (
-            <PrivateRoutes>
-                <DashboardLayout />
-            </PrivateRoutes>
-        ),
-        children: [
-            {
-                index: true,
-                element: <DecoratorDashboard />,
-            },
-        ],
+        element: <DashboardSelector />,
     },
 ])
 

@@ -80,7 +80,7 @@ class ErrorBoundary extends React.Component {
 				<motion.div
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}
-					className="min-h-screen bg-gradient-to-br from-error/10 to-warning/10 flex items-center justify-center p-4"
+					className="min-h-screen bg-linear-to-br from-error/10 to-warning/10 flex items-center justify-center p-4"
 				>
 					<motion.div
 						initial={{ scale: 0.95, y: 20 }}
@@ -89,7 +89,7 @@ class ErrorBoundary extends React.Component {
 						className="bg-base-100 rounded-2xl shadow-2xl border-2 border-error/30 max-w-2xl w-full overflow-hidden"
 					>
 						{/* Header */}
-						<div className="bg-gradient-to-r from-error to-error/70 text-error-content p-6 space-y-2">
+						<div className="bg-linear-to-r from-error to-error/70 text-error-content p-6 space-y-2">
 							<div className="flex items-center gap-3">
 								<FaExclamationTriangle className="text-3xl" />
 								<h1 className="text-2xl lg:text-3xl font-bold">

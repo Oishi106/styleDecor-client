@@ -1,42 +1,44 @@
 
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { FaCalendarAlt, FaMapMarkerAlt, FaDollarSign, FaTrash, FaEye, FaEdit } from 'react-icons/fa'
-import { useBooking } from '../../context/BookingProvider'
+import { FaCalendarAlt, FaMapMarkerAlt, FaDollarSign } from 'react-icons/fa'
+import { useEffect } from 'react'
+import axiosInstance from '../../api/axiosInstance'
+import { useAuth } from '../../context/AuthProvider'
 
 const MyBookings = () => {
-	const { bookings, cancelBooking, updateBooking } = useBooking()
-	const [editingBooking, setEditingBooking] = useState(null)
+	const { role, loading: authLoading } = useAuth()
+	const [bookings, setBookings] = useState([])
+	const [loading, setLoading] = useState(true)
+	const [error, setError] = useState('')
+	// View-only page; no mutations here
+
+	useEffect(() => {
+		if (authLoading) return
+		if (role !== 'user') {
+			setBookings([])
+			setLoading(false)
+			return
+		}
+		const fetchBookings = async () => {
+			setLoading(true)
+			setError('')
+			try {
+				const res = await axiosInstance.get('/user/bookings')
+				setBookings(Array.isArray(res.data) ? res.data : [])
+			} catch (err) {
+				setError(err?.response?.data?.message || 'Failed to load bookings')
+			} finally {
+				setLoading(false)
+			}
+		}
+		fetchBookings()
+	}, [authLoading, role])
 
 	/**
 	 * Handle booking cancellation
 	 * Shows confirmation dialog before cancelling
 	 */
-	const handleCancelBooking = (id, status) => {
-		// Prevent cancellation of completed bookings
-		if (status === 'Completed') {
-			alert('Cannot cancel completed bookings')
-			return
-		}
-		
-		if (confirm('Are you sure you want to cancel this booking?')) {
-			cancelBooking(id)
-		}
-	}
-
-	/**
-	 * Handle booking update
-	 * Opens edit modal/form for the booking
-	 */
-	const handleUpdateBooking = (booking) => {
-		if (booking.status === 'Completed') {
-			alert('Cannot update completed bookings')
-			return
-		}
-		setEditingBooking(booking)
-		// TODO: Open modal or inline edit form
-	}
-
 	/**
 	 * Get badge styling based on booking status
 	 * Returns appropriate DaisyUI badge class
@@ -50,6 +52,21 @@ const MyBookings = () => {
 			case 'Completed':
 				return 'badge-info'
 			case 'Cancelled':
+				return 'badge-error'
+			default:
+				return 'badge-ghost'
+		}
+	}
+
+	const getPaymentBadge = (paymentStatus) => {
+		switch (paymentStatus) {
+			case 'paid':
+				return 'badge-success'
+			case 'half-paid':
+				return 'badge-warning'
+			case 'pending':
+				return 'badge-ghost'
+			case 'cancelled':
 				return 'badge-error'
 			default:
 				return 'badge-ghost'
@@ -128,6 +145,12 @@ const MyBookings = () => {
 				className="card bg-base-100 shadow-xl"
 			>
 				<div className="card-body">
+					{error && (
+						<div className="alert alert-error mb-4"><span>{error}</span></div>
+					)}
+					{loading ? (
+						<div className="flex justify-center py-10"><span className="loading loading-spinner loading-lg"></span></div>
+					) : (
 					<div className="overflow-x-auto">
 						<table className="table table-zebra">
 							<thead>
@@ -138,79 +161,52 @@ const MyBookings = () => {
 									<th>Date</th>
 									<th>Location</th>
 									<th>Amount</th>
-									<th>Status</th>
-									<th>Actions</th>
+									<th>Job Status</th>
+									<th>Payment</th>
 								</tr>
 							</thead>
 							<tbody>
 								{bookings.map((booking) => (
-									<tr key={booking.id} className="hover">
-										<td className="font-semibold">#{booking.id}</td>
+									<tr key={booking._id || booking.id} className="hover">
+										<td className="font-semibold">#{booking._id || booking.id}</td>
 										<td>
-											<div className="font-semibold">{booking.service}</div>
+											<div className="font-semibold">{booking.roomName || booking.serviceName || booking.service || '—'}</div>
 										</td>
-										<td>{booking.decorator}</td>
+										<td>{booking.decoratorName || booking.decoratorEmail || booking.decorator || '—'}</td>
 										<td>
 											<div className="flex items-center gap-2">
 												<FaCalendarAlt className="text-primary" />
-												{booking.date}
+												{booking.bookingDate || booking.date || '—'}
 											</div>
 										</td>
 										<td>
 											<div className="flex items-center gap-2">
 												<FaMapMarkerAlt className="text-secondary" />
-												{booking.location}
+												{booking.location || '—'}
 											</div>
 										</td>
 										<td>
 											<div className="flex items-center gap-2">
 												<FaDollarSign className="text-success" />
-												<span className="font-bold">{booking.amount}</span>
+												<span className="font-bold">{booking.price ?? booking.amount ?? '—'}</span>
 											</div>
 										</td>
 										<td>
-											<span className={`badge ${getStatusBadge(booking.status)}`}>
-												{booking.status}
+											<span className={`badge ${getStatusBadge(booking.jobStatus || booking.status)}`}>
+												{booking.jobStatus || booking.status || '—'}
 											</span>
 										</td>
 										<td>
-											<div className="flex gap-2">
-												{/* View Details Button */}
-												<button
-													className="btn btn-sm btn-ghost btn-circle"
-													title="View Details"
-												>
-													<FaEye />
-												</button>
-												
-												{/* Update Button - Only for non-completed bookings */}
-												{booking.status !== 'Cancelled' && booking.status !== 'Completed' && (
-													<button
-														onClick={() => handleUpdateBooking(booking)}
-														className="btn btn-sm btn-info btn-circle"
-														title="Update Booking"
-													>
-														<FaEdit />
-													</button>
-												)}
-												
-												{/* Cancel Button - Only for non-completed/non-cancelled bookings */}
-												{booking.status !== 'Cancelled' && booking.status !== 'Completed' && (
-													<button
-														onClick={() => handleCancelBooking(booking.id, booking.status)}
-														className="btn btn-sm btn-error btn-circle"
-														title="Cancel Booking"
-													>
-														<FaTrash />
-													</button>
-												)}
-											</div>
+											<span className={`badge ${getPaymentBadge(booking.paymentStatus)}`}>
+												{booking.paymentStatus || 'pending'}
+											</span>
 										</td>
 									</tr>
 								))}
 							</tbody>
 						</table>
 					</div>
+					)}
 				</div>
 			</motion.div>
 

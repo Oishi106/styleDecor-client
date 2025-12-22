@@ -31,12 +31,12 @@ const ServiceCard = ({
                 </div>
             </figure>
             
-            <div className="card-body flex flex-col flex-grow">
+            <div className="card-body flex flex-col grow">
                 <h2 className="card-title text-lg font-bold">
                     {service_name}
                 </h2>
                 
-                <p className="text-sm text-base-content/70 line-clamp-2 mb-2 flex-grow">
+                <p className="text-sm text-base-content/70 line-clamp-2 mb-2 grow">
                     {short_description}
                 </p>
                 

@@ -76,7 +76,7 @@ const ServiceDetails = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-base-100 to-base-200 py-12 px-6 lg:px-12">
+    <div className="min-h-screen bg-linear-to-b from-base-100 to-base-200 py-12 px-6 lg:px-12">
       <div className="max-w-5xl mx-auto">
         {/* Back Button */}
         <motion.button
@@ -126,7 +126,7 @@ const ServiceDetails = () => {
             </div>
 
             {/* Price Info */}
-            <div className="grid grid-cols-3 gap-4 mb-8 bg-gradient-to-r from-primary/10 to-secondary/10 p-6 rounded-lg">
+            <div className="grid grid-cols-3 gap-4 mb-8 bg-linear-to-r from-primary/10 to-secondary/10 p-6 rounded-lg">
               <div>
                 <p className="text-sm text-base-content/60 font-semibold">Price</p>
                 <p className="text-3xl font-bold text-primary">${service.price}</p>

@@ -27,7 +27,7 @@ const Contact = () => {
   return (
     <div className="pb-16">
       {/* Header */}
-      <section className="bg-gradient-to-br from-primary/10 via-base-100 to-secondary/10">
+      <section className="bg-linear-to-br from-primary/10 via-base-100 to-secondary/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20 text-center">
           <motion.h1
             initial={{ opacity: 0, y: 10 }}

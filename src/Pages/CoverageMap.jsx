@@ -55,7 +55,7 @@ const CoverageMap = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-base-100 via-primary/5 to-secondary/5 py-12 px-6 lg:px-12">
+    <div className="min-h-screen bg-linear-to-br from-base-100 via-primary/5 to-secondary/5 py-12 px-6 lg:px-12">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
@@ -119,7 +119,7 @@ const CoverageMap = () => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4, delay: 0.5 + index * 0.1 }}
-              className="card bg-gradient-to-br from-primary/10 to-secondary/10 shadow-lg hover:shadow-xl transition-all"
+              className="card bg-linear-to-br from-primary/10 to-secondary/10 shadow-lg hover:shadow-xl transition-all"
             >
               <div className="card-body p-6 text-center">
                 <div className="text-3xl mb-2">📍</div>
@@ -135,7 +135,7 @@ const CoverageMap = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.8 }}
-          className="card bg-gradient-to-r from-primary/10 to-secondary/10 shadow-lg mt-12 p-8 text-center"
+          className="card bg-linear-to-r from-primary/10 to-secondary/10 shadow-lg mt-12 p-8 text-center"
         >
           <h2 className="text-3xl font-bold mb-4">Not in Your Area?</h2>
           <p className="text-lg text-base-content/70 mb-6 max-w-2xl mx-auto">

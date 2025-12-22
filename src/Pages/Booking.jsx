@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { FaCheckCircle, FaCalendar, FaMapMarkerAlt, FaArrowRight, FaCreditCard } from 'react-icons/fa'
-import { useBooking } from '../context/BookingProvider'
 import { useAuth } from '../context/AuthProvider'
 import { createBooking } from '../api/bookingApi'
 import { getRoomById } from '../api/roomApi'
@@ -34,8 +33,7 @@ const Toast = ({ message, type, onClose }) => {
 const Booking = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { user } = useAuth()
-  const { addBooking } = useBooking()
+  const { user, loading: authLoading } = useAuth()
   const [service, setService] = useState(null)
   const [formData, setFormData] = useState({
     bookingDate: '',
@@ -107,9 +105,10 @@ const Booking = () => {
 
     try {
       // MANDATORY: Create booking in database with complete data
-      if (!user?.email || !user?.displayName) {
+      const displayName = user?.name || user?.displayName
+      if (!user?.email || !displayName) {
         setToast({
-          message: 'User information incomplete. Please log in again.',
+          message: 'User information incomplete. Please wait or re-login.',
           type: 'error'
         })
         setIsLoading(false)
@@ -117,7 +116,7 @@ const Booking = () => {
       }
 
       const bookingData = {
-        name: user.displayName,
+        name: displayName,
         email: user.email,
         roomId: service._id || service.id,
         roomName: service.service_name,
@@ -153,7 +152,7 @@ const Booking = () => {
           state: { 
             booking: { 
               _id: bookingId,
-              name: user.displayName,
+              name: displayName,
               email: user.email,
               roomId: service._id || service.id,
               roomName: service.service_name,
@@ -175,11 +174,11 @@ const Booking = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-base-100 via-primary/5 to-secondary/5 py-12 px-6 lg:px-12">
+    <div className="min-h-screen bg-linear-to-br from-base-100 via-primary/5 to-secondary/5 py-12 px-6 lg:px-12">
       <div className="max-w-4xl mx-auto">
         {/* Loading State */}
         {pageLoading ? (
-          <div className="flex items-center justify-center min-h-[600px]">
+          <div className="flex items-center justify-center min-h-150">
             <span className="loading loading-spinner loading-lg"></span>
           </div>
         ) : !service ? (
@@ -256,7 +255,7 @@ const Booking = () => {
                   </div>
 
                   {/* Additional Info Card */}
-                  <div className="card bg-gradient-to-br from-accent/10 to-primary/10 shadow-lg p-8">
+                  <div className="card bg-linear-to-br from-accent/10 to-primary/10 shadow-lg p-8">
                     <h2 className="text-2xl font-bold mb-4">Important Information</h2>
                     <ul className="space-y-3">
                       <li className="flex items-start gap-3">
@@ -277,10 +276,10 @@ const Booking = () => {
                   {/* Confirm Button */}
                   <button
                     type="submit"
-                    disabled={isLoading}
+                    disabled={isLoading || authLoading}
                     className="btn btn-primary btn-lg w-full font-bold gap-2 text-lg"
                   >
-                    {isLoading ? (
+                    {isLoading || authLoading ? (
                       <span className="loading loading-spinner"></span>
                     ) : (
                       <>
@@ -330,7 +329,7 @@ const Booking = () => {
                     <div className="divider my-2"></div>
 
                     {/* Total */}
-                    <div className="flex justify-between items-center mb-6 bg-gradient-to-r from-primary/10 to-secondary/10 p-4 rounded-lg">
+                    <div className="flex justify-between items-center mb-6 bg-linear-to-r from-primary/10 to-secondary/10 p-4 rounded-lg">
                       <span className="font-bold text-lg">Total</span>
                       <span className="text-2xl font-bold text-primary">${service.price}</span>
                     </div>

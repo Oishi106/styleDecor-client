@@ -7,6 +7,7 @@ import { FaMapMarkedAlt, FaUsers, FaCheckCircle, FaGlobeAsia } from 'react-icons
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
+import { getAllRooms } from '../api/roomApi'
 
 const Home = () => {
   const [services, setServices] = useState([])
@@ -59,12 +60,10 @@ const Home = () => {
   // Fetch services from API
   const fetchServices = async () => {
     try {
-      const response = await fetch('http://localhost:3000/rooms')
-      if (response.ok) {
-        const data = await response.json()
-        // Take only first 4 services for home page
-        setServices(data.slice(0, 4))
-      }
+      const data = await getAllRooms()
+      const list = Array.isArray(data) ? data : []
+      // Take only first 4 services for home page
+      setServices(list.slice(0, 4))
     } catch (err) {
       console.error('Error fetching services:', err)
     } finally {
@@ -76,85 +75,20 @@ const Home = () => {
     fetchServices()
   }, [])
 
-// Mock decorator data (keeping for now until we have decorator API)
-const mockDecorators = [
-  {
-    id: 'decorator-1',
-    name: 'Sarah Johnson',
-    image: 'https://i.pravatar.cc/150?img=1',
-    rating: 4.9,
-    reviews: 127,
-    location: 'Dhaka',
-    specialization: 'Modern Interior',
-    bio: 'Award-winning designer specializing in modern and airy interiors with functional layouts.',
-    specialties: ['Living Rooms', 'Open-plan spaces', 'Color palettes'],
-    experience: '8 years | 220+ projects',
-    projects: [
-      { title: 'Gulshan Penthouse', result: 'Modern luxe makeover' },
-      { title: 'Banani Loft', result: 'Minimal, bright, and cozy' }
-    ]
-  },
-  {
-    id: 'decorator-2',
-    name: 'Michael Chen',
-    image: 'https://i.pravatar.cc/150?img=12',
-    rating: 4.8,
-    reviews: 98,
-    location: 'Chittagong',
-    specialization: 'Classic Design',
-    bio: 'Crafts timeless classic interiors with rich textures and elegant detailing.',
-    specialties: ['Classic motifs', 'Lighting design', 'Furniture curation'],
-    experience: '10 years | 180+ projects',
-    projects: [
-      { title: 'Hill View Villa', result: 'Classic coastal comfort' },
-      { title: 'City Club Lounge', result: 'Warm, inviting atmosphere' }
-    ]
-  },
-  {
-    id: 'decorator-3',
-    name: 'Emma Williams',
-    image: 'https://i.pravatar.cc/150?img=5',
-    rating: 5.0,
-    reviews: 156,
-    location: 'Dhaka',
-    specialization: 'Minimalist Style',
-    bio: 'Minimalist specialist focused on calm, clutter-free spaces that feel expansive.',
-    specialties: ['Minimalism', 'Scandinavian', 'Space planning'],
-    experience: '7 years | 250+ projects',
-    projects: [
-      { title: 'Nordic Studio', result: 'Serene, light-filled studio' },
-      { title: 'Minimal Office', result: 'Productive, distraction-free' }
-    ]
-  },
-  {
-    id: 'decorator-4',
-    name: 'David Brown',
-    image: 'https://i.pravatar.cc/150?img=13',
-    rating: 4.7,
-    reviews: 89,
-    location: 'Sylhet',
-    specialization: 'Luxury Decor',
-    bio: 'Delivers luxurious bespoke interiors with premium finishes and bold statements.',
-    specialties: ['Luxury suites', 'Custom millwork', 'Statement lighting'],
-    experience: '9 years | 140+ projects',
-    projects: [
-      { title: 'Lakeview Residence', result: 'Opulent yet cozy' },
-      { title: 'Boutique Hotel', result: 'Memorable guest experience' }
-    ]
-  }
-]
+	// Decorators are loaded on the dashboard after auth; public decorator listing is not wired yet.
+	const mockDecorators = []
 
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="hero min-h-[600px] relative">
+      <section className="hero min-h-150 relative">
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
             backgroundImage: 'url(https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1920)',
           }}
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/70"></div>
+          <div className="absolute inset-0 bg-linear-to-r from-black/70 via-black/50 to-black/70"></div>
         </div>
         <div className="hero-content text-center relative z-10">
           <motion.div
@@ -211,7 +145,7 @@ const mockDecorators = [
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
           {loading ? (
             <div className="col-span-full flex justify-center py-12">
               <span className="loading loading-spinner loading-lg"></span>
@@ -224,6 +158,7 @@ const mockDecorators = [
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: false, amount: 0.3 }}
+                className="h-full"
               >
                 <ServiceCard {...service} />
               </motion.div>
@@ -239,7 +174,7 @@ const mockDecorators = [
       </section>
 
       {/* Top Decorators Section */}
-      <section className="py-16 px-6 lg:px-12 bg-gradient-to-b from-base-200 via-base-200 to-base-100">
+      <section className="py-16 px-6 lg:px-12 bg-linear-to-b from-base-200 via-base-200 to-base-100">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Top Decorators</h2>
@@ -248,7 +183,7 @@ const mockDecorators = [
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
             {mockDecorators.map((decorator, index) => (
               <motion.div
                 key={index}
@@ -256,6 +191,7 @@ const mockDecorators = [
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: false, amount: 0.3 }}
+                className="h-full"
               >
                 <DecoratorCard {...decorator} />
               </motion.div>
@@ -332,7 +268,7 @@ const mockDecorators = [
           </div>
 
           {/* Coverage Info Below Map */}
-          <div className="card-body p-8 bg-gradient-to-r from-primary/5 to-secondary/5">
+          <div className="card-body p-8 bg-linear-to-r from-primary/5 to-secondary/5">
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               {coverageLocations.map((location) => (
                 <motion.div
@@ -356,7 +292,7 @@ const mockDecorators = [
       </section>
 
       {/* Why Choose Us Section */}
-      <section className="py-16 px-6 lg:px-12 bg-gradient-to-b from-base-100 via-base-100 to-base-200">
+      <section className="py-16 px-6 lg:px-12 bg-linear-to-b from-base-100 via-base-100 to-base-200">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4">Why Choose StyleDecor?</h2>
@@ -436,6 +372,79 @@ const mockDecorators = [
               </div>
             </motion.div>
           ))}
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section className="py-16 px-6 lg:px-12 bg-linear-to-b from-base-200 via-base-200 to-base-100">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold mb-4">How It Works</h2>
+            <p className="text-base-content/70 max-w-2xl mx-auto">
+              Simple steps to transform your space with StyleDecor
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {[
+              { 
+                step: '01', 
+                title: 'Browse Services', 
+                desc: 'Explore our wide range of decoration services and choose what fits your needs',
+                icon: '🔍'
+              },
+              { 
+                step: '02', 
+                title: 'Book Appointment', 
+                desc: 'Select your preferred date, time, and decorator for a consultation',
+                icon: '📅'
+              },
+              { 
+                step: '03', 
+                title: 'Design & Plan', 
+                desc: 'Work with our experts to create the perfect design plan for your space',
+                icon: '✏️'
+              },
+              { 
+                step: '04', 
+                title: 'Enjoy Results', 
+                desc: 'Sit back and watch as we transform your space into something beautiful',
+                icon: '✨'
+              }
+            ].map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.15 }}
+                viewport={{ once: false, amount: 0.3 }}
+              >
+                <div className="relative">
+                  <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-2 border-t-4 border-primary">
+                    <div className="card-body items-center text-center">
+                      <div className="text-6xl mb-4">{item.icon}</div>
+                      <div className="badge badge-primary badge-lg mb-4 px-4 py-3 text-lg font-bold">
+                        {item.step}
+                      </div>
+                      <h3 className="card-title text-xl mb-3">{item.title}</h3>
+                      <p className="text-sm text-base-content/70">
+                        {item.desc}
+                      </p>
+                    </div>
+                  </div>
+                  {index < 3 && (
+                    <div className="hidden md:block absolute top-1/2 -right-4 transform -translate-y-1/2 z-10">
+                      <svg className="w-8 h-8 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          
         </div>
       </section>
     </div>

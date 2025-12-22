@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { FaUser, FaEnvelope, FaLock, FaImage } from 'react-icons/fa'
+import { FaUser, FaEnvelope, FaLock, FaLink } from 'react-icons/fa'
 import { useAuth } from '../context/AuthProvider'
 import { storeUserInDatabase } from '../api/userApi'
 
@@ -14,7 +14,8 @@ const Register = () => {
     name: '',
     email: '',
     password: '',
-    photoDataUrl: ''
+    photoDataUrl: '',
+    photoUrl: ''
   })
 
   const [preview, setPreview] = useState('')
@@ -24,20 +25,18 @@ const Register = () => {
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      const dataUrl = reader.result
-      setFormData(prev => ({ ...prev, photoDataUrl: dataUrl }))
-      setPreview(dataUrl)
-    }
-    reader.readAsDataURL(file)
+  const handlePhotoUrlChange = (e) => {
+    const { value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      photoUrl: value,
+      photoDataUrl: value ? '' : prev.photoDataUrl
+    }))
+    setPreview(value)
   }
 
   const clearImage = () => {
-    setFormData(prev => ({ ...prev, photoDataUrl: '' }))
+    setFormData(prev => ({ ...prev, photoDataUrl: '', photoUrl: '' }))
     setPreview('')
   }
 
@@ -58,13 +57,15 @@ const Register = () => {
     setIsSubmitting(true)
     try {
       // Register user with Firebase
-      await register(formData.name, formData.email, formData.password, formData.photoDataUrl)
+      const photoSource = formData.photoUrl || formData.photoDataUrl
+
+      await register(formData.name, formData.email, formData.password, photoSource)
       
       // Store user details in database
       const userData = {
         name: formData.name,
         email: formData.email,
-        photoUrl: formData.photoDataUrl,
+        photoUrl: photoSource,
         createdAt: new Date().toISOString(),
         role: 'user'
       }
@@ -85,7 +86,7 @@ const Register = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-secondary/10 via-base-100 to-primary/10 flex items-center justify-center py-12 px-6">
+    <div className="min-h-screen bg-linear-to-br from-secondary/10 via-base-100 to-primary/10 flex items-center justify-center py-12 px-6">
       <div className="max-w-4xl w-full grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
         {/* Left Side - Intro */}
         <motion.div
@@ -94,7 +95,7 @@ const Register = () => {
           transition={{ duration: 0.6 }}
           className="hidden lg:block text-center"
         >
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent">
+          <h1 className="text-5xl font-bold mb-4 bg-linear-to-r from-secondary to-primary bg-clip-text text-transparent">
             Join StyleDecor
           </h1>
           <p className="text-lg text-base-content/70 mb-6">
@@ -186,33 +187,36 @@ const Register = () => {
                   />
                 </div>
 
-                {/* Profile Image Upload */}
+                {/* Profile Image via URL */}
                 <div className="form-control">
                   <label className="label">
                     <span className="label-text font-semibold flex items-center gap-2">
-                      <FaImage className="text-accent" />
-                      Profile Image (optional)
+                      <FaLink className="text-accent" />
+                      Photo URL (optional)
                     </span>
                   </label>
                   <input
-                    type="file"
-                    accept="image/*"
-                    className="file-input file-input-bordered w-full"
-                    onChange={handleImageChange}
+                    type="url"
+                    name="photoUrl"
+                    value={formData.photoUrl}
+                    onChange={handlePhotoUrlChange}
+                    placeholder="https://your-photo.jpg"
+                    className="input input-bordered bg-base-200 focus:input-accent transition-all"
                   />
-                  {preview && (
-                    <div className="mt-3 flex items-center gap-3">
-                      <div className="avatar">
-                        <div className="w-16 rounded-full ring ring-primary/40 ring-offset-base-100 ring-offset-2">
-                          <img src={preview} alt="preview" />
-                        </div>
-                      </div>
-                      <button type="button" onClick={clearImage} className="btn btn-ghost btn-sm">
-                        Remove
-                      </button>
-                    </div>
-                  )}
                 </div>
+
+                {preview && (
+                  <div className="mt-3 flex items-center gap-3">
+                    <div className="avatar">
+                      <div className="w-16 rounded-full ring ring-primary/40 ring-offset-base-100 ring-offset-2">
+                        <img src={preview} alt="preview" />
+                      </div>
+                    </div>
+                    <button type="button" onClick={clearImage} className="btn btn-ghost btn-sm">
+                      Remove
+                    </button>
+                  </div>
+                )}
 
                 {/* Register Button */}
                 <button type="submit" className="btn btn-secondary btn-lg w-full font-bold" disabled={isSubmitting}>
