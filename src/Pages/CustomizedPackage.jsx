@@ -84,8 +84,9 @@ const CustomizedPackage = () => {
       const bookingData = {
         name: displayName,
         email: user.email,
-        roomId: null,
+        roomId: `custom-${activePackage.id}`,
         roomName: `Customized Package - ${activePackage.name}`,
+        service_name: `Customized Package - ${activePackage.name}`,
         price: totalPrice,
         bookingDate,
         location,
@@ -122,7 +123,8 @@ const CustomizedPackage = () => {
       })
     } catch (error) {
       console.error('Customize booking error:', error)
-      setToast({ type: 'error', message: 'Failed to create booking. Please try again.' })
+      const message = error?.response?.data?.message || error?.message || 'Failed to create booking. Please try again.'
+      setToast({ type: 'error', message })
     } finally {
       setIsSubmitting(false)
     }

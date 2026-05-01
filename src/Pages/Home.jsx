@@ -307,7 +307,7 @@ const Home = () => {
       {/* Customize Decoration Section */}
       <section className="py-16 px-6 lg:px-12">
         <div className="max-w-7xl mx-auto">
-          <div className="rounded-3xl overflow-hidden border border-primary/15 bg-linear-to-br from-base-100 via-base-100 to-primary/10 shadow-2xl">
+          <div className="rounded-3xl overflow-hidden border border-primary/15 bg-linear-to-br from-base-100 via-base-100 to-primary/10 ">
             <div className="grid grid-cols-1 lg:grid-cols-2 items-stretch">
               <div className="p-8 md:p-12 lg:p-14 flex flex-col justify-center">
                 <p className="uppercase tracking-[0.3em] text-xs text-primary font-semibold mb-3">Tailored Concepts</p>
@@ -618,7 +618,7 @@ const Home = () => {
        {/* Premium FAQ Section */}
       <section className="py-20 px-6 lg:px-12">
         <div className="max-w-7xl mx-auto">
-          <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-linear-to-br from-base-100 via-base-100 to-primary/10 p-8 md:p-12 shadow-2xl">
+          <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-linear-to-br from-base-100 via-base-100 to-primary/10 p-8 md:p-12 ">
             <div className="pointer-events-none absolute -top-16 -right-16 h-56 w-56 rounded-full bg-primary/20 blur-3xl"></div>
             <div className="pointer-events-none absolute -bottom-20 -left-16 h-64 w-64 rounded-full bg-secondary/20 blur-3xl"></div>
 
