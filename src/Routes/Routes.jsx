@@ -28,6 +28,8 @@ import DecoratorProfile from '../Pages/DecoratorProfile'
 import MyProfile from '../Pages/Dashboard/MyProfile'
 import MyBookings from '../Pages/Dashboard/MyBookings'
 import PaymentHistory from '../Pages/Dashboard/PaymentHistory'
+import MyFavourites from '../Pages/Dashboard/MyFavourites'
+import MessagesPage from '../Pages/Messages'
 import Unauthorized from '../Pages/Unauthorized'
 
 const router = createBrowserRouter([
@@ -188,7 +190,15 @@ const router = createBrowserRouter([
                 path: 'saved',
                 element: (
                     <UserRoute>
-                        <div className="p-6"><h2 className="text-2xl font-bold">Saved Services</h2></div>
+                        <MyFavourites />
+                    </UserRoute>
+                ),
+            },
+            {
+                path: 'messages',
+                element: (
+                    <UserRoute>
+                        <MessagesPage />
                     </UserRoute>
                 ),
             },

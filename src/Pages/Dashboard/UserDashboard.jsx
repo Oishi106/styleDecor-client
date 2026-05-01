@@ -3,13 +3,16 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { FaChartLine, FaCalendarCheck, FaHeart, FaCreditCard, FaUser, FaClipboardList, FaMoneyBillWave, FaArrowRight } from 'react-icons/fa'
+import { FaChartLine, FaCalendarCheck, FaHeart, FaCreditCard, FaUser, FaClipboardList, FaMoneyBillWave, FaArrowRight, FaComments } from 'react-icons/fa'
 import axiosInstance from '../../api/axiosInstance'
 import { useAuth } from '../../context/AuthProvider'
+import ChatList from '../../components/ChatList'
+import { useChat } from '../../context/ChatProvider'
 
 const UserDashboard = () => {
 	
 	const { user, role, loading: authLoading } = useAuth()
+	const { unreadCount } = useChat()
 	const [bookings, setBookings] = useState([])
 	const [loading, setLoading] = useState(true)
 	const [error, setError] = useState('')
@@ -86,7 +89,7 @@ const UserDashboard = () => {
 			</div>
 
 			{/* Quick Access Navigation Cards */}
-			<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 				{/* My Profile Card */}
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
@@ -152,9 +155,54 @@ const UserDashboard = () => {
 						</div>
 					</Link>
 				</motion.div>
+
+				{/* Messages Card */}
+				<motion.div
+					initial={{ opacity: 0, y: 20 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ delay: 0.7 }}
+				>
+					<Link to="/dashboard/messages">
+						<div className="card bg-linear-to-br from-info/10 to-info/5 hover:shadow-xl transition-all cursor-pointer group relative">
+							<div className="card-body">
+								<div className="flex items-center justify-between mb-4">
+									<FaComments className="text-4xl text-info" />
+									{unreadCount > 0 && (
+										<div className="badge badge-info badge-lg absolute top-2 right-2">
+											{unreadCount}
+										</div>
+									)}
+									<FaArrowRight className="text-xl text-info opacity-0 group-hover:opacity-100 transition-opacity" />
+								</div>
+								<h3 className="text-xl font-bold mb-2">Messages</h3>
+								<p className="text-sm text-base-content/60">
+									Chat with decorators about your bookings
+								</p>
+							</div>
+						</div>
+					</Link>
+				</motion.div>
 			</div>
 
-			{/* Bookings List */}
+			{/* Messages and Bookings Grid */}
+			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+				{/* Chat Section */}
+				<motion.div
+					initial={{ opacity: 0, y: 20 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ delay: 0.7 }}
+					className="lg:col-span-1"
+				>
+					<ChatList />
+				</motion.div>
+
+				{/* Bookings List */}
+				<motion.div
+					initial={{ opacity: 0, y: 20 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ delay: 0.8 }}
+					className="lg:col-span-2"
+				>
 			<div className="card bg-base-100 shadow-lg">
 				<div className="card-body">
 					<h3 className="card-title text-xl mb-4">My Bookings</h3>
@@ -212,6 +260,8 @@ const UserDashboard = () => {
 						</Link>
 					</div>
 				</div>
+			</div>
+				</motion.div>
 			</div>
 		</div>
 	)

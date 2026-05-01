@@ -34,6 +34,8 @@ const Toast = ({ message, type, onClose }) => {
   )
 }
 
+const getPaymentAmount = (booking) => Number(booking?.price ?? booking?.amount ?? 0)
+
 const PaymentForm = ({ booking, service, paymentMethod, onSuccess }) => {
   const stripe = useStripe()
   const elements = useElements()
@@ -51,15 +53,13 @@ const PaymentForm = ({ booking, service, paymentMethod, onSuccess }) => {
           return
         }
 
-        const response = await createPaymentIntent(Math.round(paymentAmountForBooking(booking) * 100), booking._id)
+        const response = await createPaymentIntent(Math.round(getPaymentAmount(booking) * 100), booking._id)
         setClientSecret(response.clientSecret)
       } catch (error) {
         console.error('Error getting payment intent:', error)
         setToast({ message: 'Failed to initialize payment', type: 'error' })
       }
     }
-
-    const paymentAmountForBooking = (booking) => Number(booking?.price ?? booking?.amount ?? 0)
 
     getPaymentIntent()
   }, [booking?._id])
@@ -175,7 +175,7 @@ const PaymentForm = ({ booking, service, paymentMethod, onSuccess }) => {
             Processing...
           </>
         ) : (
-          `Pay $${booking?.amount?.toFixed(2) || '0.00'}`
+          `Pay $${getPaymentAmount(booking).toFixed(2)}`
         )}
       </button>
     </form>
@@ -189,7 +189,7 @@ const Payment = () => {
   
   // Booking data passed from previous page
   const { booking, service } = location.state || {}
-  const paymentAmount = Number(booking?.price ?? booking?.amount ?? 0)
+  const paymentAmount = getPaymentAmount(booking)
   
   // Payment state management
   const [paymentMethod, setPaymentMethod] = useState('card')

@@ -15,8 +15,10 @@ import {
 	FaBell,
 	FaClipboardList,
 	FaSpinner,
+	FaComments,
 } from 'react-icons/fa'
 import { useAuth } from '../context/AuthProvider'
+import { useChat } from '../context/ChatProvider'
 
 /**
  * Shared Dashboard Layout Component
@@ -35,6 +37,7 @@ const DashboardLayout = () => {
 	const [isLoading, setIsLoading] = useState(false)
 	const [isDesktop, setIsDesktop] = useState(false)
 	const { user, role, logout, loading: authLoading } = useAuth()
+	const { unreadCount } = useChat()
 	const location = useLocation()
 	const navigate = useNavigate()
 
@@ -59,7 +62,8 @@ const DashboardLayout = () => {
 					{ label: 'My Profile', href: '/dashboard/profile' },
 					{ label: 'My Bookings', href: '/dashboard/bookings' },
 					{ label: 'Payment History', href: '/dashboard/payments' },
-					{ label: 'Saved Services', href: '/dashboard/saved' },
+					{ label: 'My Favourites', href: '/dashboard/saved' },
+
 				],
 			},
 		],
@@ -297,103 +301,132 @@ const DashboardLayout = () => {
 						<span>Home</span>
 					</Link>
 
-					{menuItems.map((section, idx) => {
-						const Icon = section.icon
-						const sectionActive = isActive(section.href)
-						return (
-							<div key={idx}>
-								{/* Main Section */}
-								<Link
-									to={section.href}
-									onClick={() => setSidebarOpen(false)}
-									className={`flex items-center gap-3 px-4 py-3 rounded-lg font-semibold transition-all ${
-										sectionActive
-											? 'bg-primary text-white shadow-lg'
-											: 'text-neutral-300 hover:bg-neutral-800'
-									}`}
-								>
-									<Icon className="text-lg" />
-									<span>{section.title}</span>
-									{sectionActive && (
-										<motion.div
-											layoutId="activeIndicator"
-											className="ml-auto w-2 h-2 bg-white rounded-full"
-										/>
-									)}
-								</Link>
+				{/* Messages Link with Unread Badge */}
+				<Link
+					to="/dashboard/messages"
+					onClick={() => setSidebarOpen(false)}
+					className={`flex items-center gap-3 px-4 py-3 rounded-lg font-semibold transition-all relative ${
+						location.pathname === '/dashboard/messages'
+							? 'bg-primary text-white shadow-lg'
+							: 'text-neutral-300 hover:bg-neutral-800 hover:text-white'
+					}`}
+				>
+					<FaComments className="text-lg" />
+					<span>Messages</span>
+					{unreadCount > 0 && (
+						<motion.div
+							animate={{ scale: [1, 1.1, 1] }}
+							transition={{ duration: 2, repeat: Infinity }}
+							className="ml-auto badge badge-error badge-sm text-white"
+						>
+							{unreadCount}
+						</motion.div>
+					)}
+					{location.pathname === '/dashboard/messages' && (
+						<motion.div
+							layoutId="activeIndicator"
+							className="ml-auto w-2 h-2 bg-white rounded-full"
+						/>
+					)}
+				</Link>
 
-								{/* Submenu */}
-								<AnimatePresence>
-									{sectionActive && (
-										<motion.div
-											initial={{ opacity: 0, height: 0 }}
-											animate={{ opacity: 1, height: 'auto' }}
-											exit={{ opacity: 0, height: 0 }}
-											className="overflow-hidden"
-										>
-											<div className="mt-2 ml-4 space-y-1 border-l border-neutral-700 pl-4">
-												{section.items.map((item, itemIdx) => (
-													<Link
-														key={itemIdx}
-														to={item.href}
-														onClick={() => setSidebarOpen(false)}
-														className={`block px-3 py-2 rounded text-sm transition-all ${
-															location.pathname === item.href
-																? 'bg-primary text-white font-semibold'
-																: 'text-neutral-300 hover:text-white hover:bg-neutral-800'
-														}`}
-													>
-														{item.label}
-													</Link>
-												))}
-											</div>
-										</motion.div>
-									)}
-								</AnimatePresence>
-							</div>
-						)
-					})}
-				</nav>
+				{menuItems.map((section, idx) => {
+					const Icon = section.icon
+					const sectionActive = isActive(section.href)
+					return (
+						<div key={idx}>
+							{/* Main Section */}
+							<Link
+								to={section.href}
+								onClick={() => setSidebarOpen(false)}
+								className={`flex items-center gap-3 px-4 py-3 rounded-lg font-semibold transition-all ${
+									sectionActive
+										? 'bg-primary text-white shadow-lg'
+										: 'text-neutral-300 hover:bg-neutral-800'
+								}`}
+							>
+								<Icon className="text-lg" />
+								<span>{section.title}</span>
+								{sectionActive && (
+									<motion.div
+										layoutId="activeIndicator"
+										className="ml-auto w-2 h-2 bg-white rounded-full"
+									/>
+								)}
+							</Link>
 
-				{/* Sidebar Footer - Always Visible */}
-				<div className="p-6 border-t border-neutral-700 space-y-3">
-					{/* Home Button - Always Visible */}
-					<motion.button
-						whileHover={{ scale: 1.05 }}
-						whileTap={{ scale: 0.95 }}
-						onClick={handleHome}
-						className="btn btn-outline w-full justify-start gap-2 text-neutral-300 hover:text-white"
-					>
-						<FaHome className="text-lg" />
-						Home
-					</motion.button>
+							{/* Submenu */}
+							<AnimatePresence>
+								{sectionActive && (
+									<motion.div
+										initial={{ opacity: 0, height: 0 }}
+										animate={{ opacity: 1, height: 'auto' }}
+										exit={{ opacity: 0, height: 0 }}
+										className="overflow-hidden"
+									>
+										<div className="mt-2 ml-4 space-y-1 border-l border-neutral-700 pl-4">
+											{section.items.map((item, itemIdx) => (
+												<Link
+													key={itemIdx}
+													to={item.href}
+													onClick={() => setSidebarOpen(false)}
+													className={`block px-3 py-2 rounded text-sm transition-all ${
+														location.pathname === item.href
+															? 'bg-primary text-white font-semibold'
+															: 'text-neutral-300 hover:text-white hover:bg-neutral-800'
+													}`}
+												>
+													{item.label}
+												</Link>
+											))}
+										</div>
+									</motion.div>
+								)}
+							</AnimatePresence>
+						</div>
+					)
+				})}
+			</nav>
 
-					{/* Notifications */}
-					<button className="btn btn-outline w-full justify-start gap-2 text-neutral-300 hover:text-white">
-						<FaBell className="text-lg" />
-						Notifications
-					</button>
+			{/* Sidebar Footer - Always Visible */}
+			<div className="p-6 border-t border-neutral-700 space-y-3">
+				{/* Home Button - Always Visible */}
+				<motion.button
+					whileHover={{ scale: 1.05 }}
+					whileTap={{ scale: 0.95 }}
+					onClick={handleHome}
+					className="btn btn-outline w-full justify-start gap-2 text-neutral-300 hover:text-white"
+				>
+					<FaHome className="text-lg" />
+					Home
+				</motion.button>
 
-					{/* Logout Button - Always Visible */}
-					<motion.button
-						whileHover={{ scale: 1.05 }}
-						whileTap={{ scale: 0.95 }}
-						onClick={handleLogout}
-						disabled={isLoading}
-						className="btn btn-error w-full justify-start gap-2"
-					>
-						{isLoading ? (
-							<FaSpinner className="text-lg animate-spin" />
-						) : (
-							<FaSignOutAlt className="text-lg" />
-						)}
-						Logout
-					</motion.button>
-				</div>
-			</motion.div>
+				{/* Notifications */}
+				<button className="btn btn-outline w-full justify-start gap-2 text-neutral-300 hover:text-white">
+					<FaBell className="text-lg" />
+					Notifications
+				</button>
 
-			{/* Main Content */}
-			<div className="flex-1 flex flex-col overflow-hidden">
+				{/* Logout Button - Always Visible */}
+				<motion.button
+					whileHover={{ scale: 1.05 }}
+					whileTap={{ scale: 0.95 }}
+					onClick={handleLogout}
+					disabled={isLoading}
+					className="btn btn-error w-full justify-start gap-2"
+				>
+					{isLoading ? (
+						<FaSpinner className="text-lg animate-spin" />
+					) : (
+						<FaSignOutAlt className="text-lg" />
+					)}
+					Logout
+				</motion.button>
+			</div>
+		</motion.div>
+
+		{/* Main Content */}
+		<div className="flex-1 flex flex-col overflow-hidden">
 				{/* Top Navbar */}
 				<div className="bg-white border-b border-base-300 shadow-sm">
 					<div className="px-4 lg:px-6 py-4 flex items-center justify-between max-w-7xl mx-auto">

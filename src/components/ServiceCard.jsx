@@ -1,12 +1,12 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
-import { FaStar } from 'react-icons/fa'
+import React, { useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { FaStar, FaHeart, FaRegHeart } from 'react-icons/fa'
+import { useFavorites } from '../context/FavoritesProvider'
+import { useAuth } from '../context/AuthProvider'
 
 const ServiceCard = ({ 
     id,
     _id,
-    roomId,
-    detailId,
     image, 
     service_name, 
     category, 
@@ -14,9 +14,20 @@ const ServiceCard = ({
     short_description, 
     rating 
 }) => {
-    const serviceId =  _id 
+    const serviceId = _id || id
     const detailPath = serviceId ? `/services/${serviceId}` : '#'
     const safeRating = Number(rating) || 0
+    const { isFavorited, addFavorite, removeFavorite, getFavoriteByItemId } = useFavorites()
+    const { user } = useAuth()
+    const navigate = useNavigate()
+    const [loadingFav, setLoadingFav] = useState(false)
+    const favObj = typeof getFavoriteByItemId === 'function' ? getFavoriteByItemId(serviceId) : null
+    const initialFavorited = Boolean(favObj) || isFavorited(serviceId)
+    const [favoritedLocal, setFavoritedLocal] = useState(initialFavorited)
+
+    useEffect(() => {
+        setFavoritedLocal(initialFavorited)
+    }, [initialFavorited])
 
     return (
         <div className="card bg-base-100 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 h-full flex flex-col">
@@ -29,6 +40,57 @@ const ServiceCard = ({
                 <div className="badge badge-primary absolute top-3 right-3 font-semibold">
                     {category}
                 </div>
+                <button
+                    onClick={async () => {
+                        if (!user) return navigate('/login')
+                        // optimistic UI
+                        setFavoritedLocal((s) => !s)
+                        try {
+                            setLoadingFav(true)
+                            if (favoritedLocal && favObj) {
+                                await removeFavorite(favObj._id || favObj.id)
+                            } else {
+                                await addFavorite({
+                                    itemId: serviceId,
+                                    itemType: 'service',
+                                    serviceId,
+                                    name: service_name,
+                                    price,
+                                    image,
+                                    category,
+                                    rating: safeRating,
+                                    description: short_description,
+                                    short_description,
+                                    meta: {
+                                        name: service_name,
+                                        price,
+                                        image,
+                                        category,
+                                        rating: safeRating,
+                                        description: short_description,
+                                        short_description,
+                                    },
+                                })
+                            }
+                        } catch (err) {
+                            console.error(err)
+                            // rollback
+                            setFavoritedLocal((s) => !s)
+                        } finally {
+                            setLoadingFav(false)
+                        }
+                    }}
+                    className="absolute left-3 top-3 btn btn-ghost btn-circle p-2"
+                    aria-label={favoritedLocal ? 'Remove from favourites' : 'Add to favourites'}
+                >
+                    {loadingFav ? (
+                        <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle></svg>
+                    ) : favoritedLocal ? (
+                        <FaHeart className="text-error" />
+                    ) : (
+                        <FaRegHeart className="text-neutral" />
+                    )}
+                </button>
             </figure>
             
             <div className="card-body flex flex-col grow">
