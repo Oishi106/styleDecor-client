@@ -12,6 +12,7 @@ import Booking from '../Pages/Booking'
 import Payment from '../Pages/Payment'
 import StripePayment from '../Pages/StripePayment'
 import CoverageMap from '../Pages/CoverageMap'
+import CustomizedPackage from '../Pages/CustomizedPackage'
 import Register from '../Pages/Register'
 import PrivateRoutes from './PrivateRoutes'
 import AdminRoute from './AdminRoute'
@@ -65,6 +66,14 @@ const router = createBrowserRouter([
                 element: (
                     <PrivateRoutes>
                         <Booking />
+                    </PrivateRoutes>
+                ),
+            },
+            {
+                path: 'customize',
+                element: (
+                    <PrivateRoutes>
+                        <CustomizedPackage />
                     </PrivateRoutes>
                 ),
             },

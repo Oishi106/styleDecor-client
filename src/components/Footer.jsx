@@ -39,8 +39,8 @@ const Footer = () => {
                     <div className="text-sm space-y-1">
                         <p><strong>Saturday - Thursday:</strong></p>
                         <p>9:00 AM - 6:00 PM</p>
-                        <p className="mt-2"><strong>Friday:</strong></p>
-                        <p>Closed</p>
+                        <p className="mt-2"><strong>Friday: </strong>Closed</p>
+                        
                     </div>
                 </nav>
 

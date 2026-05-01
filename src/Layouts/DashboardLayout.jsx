@@ -33,9 +33,15 @@ import { useAuth } from '../context/AuthProvider'
 const DashboardLayout = () => {
 	const [sidebarOpen, setSidebarOpen] = useState(false)
 	const [isLoading, setIsLoading] = useState(false)
+	const [isDesktop, setIsDesktop] = useState(false)
 	const { user, role, logout, loading: authLoading } = useAuth()
 	const location = useLocation()
 	const navigate = useNavigate()
+
+	const displayName = user?.name || user?.fullName || user?.displayName || ''
+	const email = user?.email || ''
+	const photoURL = user?.photoURL || user?.photoUrl || user?.avatarUrl || ''
+	const avatarInitial = (displayName || email || 'U').charAt(0).toUpperCase()
 
 	// Determine role strictly from backend-provided auth state
 	const userRole = role
@@ -98,9 +104,23 @@ const DashboardLayout = () => {
 		return () => clearTimeout(timer)
 	}, [location.pathname])
 
+	// Track desktop breakpoint (Tailwind lg = 1024px)
+	useEffect(() => {
+		if (typeof window === 'undefined' || !window.matchMedia) return
+		const mq = window.matchMedia('(min-width: 1024px)')
+		const update = () => setIsDesktop(Boolean(mq.matches))
+		update()
+		if (mq.addEventListener) mq.addEventListener('change', update)
+		else mq.addListener(update)
+		return () => {
+			if (mq.removeEventListener) mq.removeEventListener('change', update)
+			else mq.removeListener(update)
+		}
+	}, [])
+
 	// Close sidebar on mobile when navigation happens
 	useEffect(() => {
-		setSidebarOpen(false)
+		if (!isDesktop) setSidebarOpen(false)
 	}, [location.pathname])
 
 	// Handle logout
@@ -195,7 +215,7 @@ const DashboardLayout = () => {
 
 			{/* Mobile Overlay */}
 			<AnimatePresence>
-				{sidebarOpen && (
+				{sidebarOpen && !isDesktop && (
 					<motion.div
 						variants={overlayVariants}
 						initial="hidden"
@@ -211,9 +231,9 @@ const DashboardLayout = () => {
 			<motion.div
 				variants={sidebarVariants}
 				initial="visible"
-				animate={sidebarOpen ? 'visible' : 'hidden'}
+				animate={sidebarOpen || isDesktop ? 'visible' : 'hidden'}
 				transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-				className="fixed lg:static w-64 h-screen bg-linear-to-b from-neutral to-neutral-900 text-neutral-content flex flex-col z-40 lg:z-auto"
+				className="fixed lg:static w-64 h-screen bg-linear-to-b from-primary/20 via-neutral to-neutral-900 text-neutral-content flex flex-col z-40 lg:z-auto"
 			>
 				{/* Sidebar Header */}
 				<div className="p-6 border-b border-neutral-700 flex items-center justify-between">
@@ -237,25 +257,25 @@ const DashboardLayout = () => {
 				{/* User Profile Section */}
 				<div className="px-6 py-4 border-b border-neutral-700">
 					<div className="flex items-center gap-3 mb-3">
-						{user?.photoURL ? (
+						{photoURL ? (
 							<img
-								src={user.photoURL}
-								alt={user.displayName}
+								src={photoURL}
+								alt={displayName || email || 'User'}
 								className="w-10 h-10 rounded-full object-cover border-2 border-primary"
 							/>
 						) : (
 							<div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center border-2 border-primary/50">
 								<span className="text-white font-bold text-sm">
-									{user?.displayName?.charAt(0)?.toUpperCase() || 'U'}
+									{avatarInitial}
 								</span>
 							</div>
 						)}
 						<div className="flex-1 min-w-0">
 							<p className="text-sm font-semibold text-white truncate">
-								{user?.displayName || 'User'}
+								{displayName || email || 'User'}
 							</p>
 							<p className="text-xs text-neutral-300 truncate">
-								{user?.email || 'user@example.com'}
+								{email || 'user@example.com'}
 							</p>
 						</div>
 					</div>
@@ -268,6 +288,15 @@ const DashboardLayout = () => {
 
 				{/* Navigation Menu */}
 				<nav className="flex-1 overflow-y-auto py-6 px-3 space-y-2">
+					<Link
+						to="/"
+						onClick={() => setSidebarOpen(false)}
+						className="flex items-center gap-3 px-4 py-3 rounded-lg font-semibold transition-all text-neutral-300 hover:bg-neutral-800 hover:text-white"
+					>
+						<FaHome className="text-lg" />
+						<span>Home</span>
+					</Link>
+
 					{menuItems.map((section, idx) => {
 						const Icon = section.icon
 						const sectionActive = isActive(section.href)
@@ -411,18 +440,18 @@ const DashboardLayout = () => {
 							<motion.div
 								whileHover={{ scale: 1.05 }}
 								className="avatar cursor-pointer hover:opacity-80 transition-opacity"
-								title={user?.displayName}
+								title={displayName || email || 'User'}
 							>
-								{user?.photoURL ? (
+								{photoURL ? (
 									<img
-										src={user.photoURL}
-										alt={user.displayName}
+										src={photoURL}
+										alt={displayName || email || 'User'}
 										className="w-10 rounded-full border border-primary"
 									/>
 								) : (
 									<div className="w-10 bg-primary rounded-full flex items-center justify-center border border-primary">
 										<span className="text-white font-bold text-sm">
-											{user?.displayName?.charAt(0)?.toUpperCase() || 'U'}
+											{avatarInitial}
 										</span>
 									</div>
 								)}

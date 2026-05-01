@@ -5,10 +5,8 @@ import { useAuth } from '../../context/AuthProvider'
 import {
 	FaClock,
 	FaCheckCircle,
-	FaChevronRight,
 	FaClipboardList,
 	FaDollarSign,
-	FaPlayCircle,
 } from 'react-icons/fa'
 
 const DecoratorDashboard = () => {
@@ -18,16 +16,46 @@ const DecoratorDashboard = () => {
 	const [error, setError] = useState('')
 	const [statusFilter, setStatusFilter] = useState('all')
 
+	const decoratorEmail = user?.email
+	const effectiveRole = (role || user?.role || '').toString().toLowerCase()
+
 	useEffect(() => {
 		if (authLoading) return
-		if (!user || role !== 'decorator') return
+		if (!user || effectiveRole !== 'decorator') {
+			setJobs([])
+			setError('')
+			return
+		}
+		if (!decoratorEmail) {
+			setJobs([])
+			setError('Missing account email. Please re-login.')
+			return
+		}
 		const fetchJobs = async () => {
 			setLoading(true)
 			setError('')
 			try {
-				const params = statusFilter && statusFilter !== 'all' ? { status: statusFilter } : undefined
-				const res = await axiosInstance.get('/decorator/jobs', { params })
-				const payload = res?.data
+				const token = localStorage.getItem('token')
+				if (!token) {
+					setJobs([])
+					setError('Missing token. Please login again.')
+					return
+				}
+
+				if (import.meta?.env?.DEV) {
+					console.log('[DecoratorDashboard] decoratorEmail:', decoratorEmail)
+				}
+
+				const response = await axiosInstance.get('/decorator/jobs', {
+					params: { decoratorEmail },
+					headers: { Authorization: `Bearer ${token}` },
+				})
+
+				const payload = response?.data
+				if (import.meta?.env?.DEV) {
+					console.log('[DecoratorDashboard] /decorator/jobs response:', payload)
+				}
+
 				const list = Array.isArray(payload)
 					? payload
 					: Array.isArray(payload?.jobs)
@@ -35,7 +63,7 @@ const DecoratorDashboard = () => {
 						: Array.isArray(payload?.data)
 							? payload.data
 							: []
-				setJobs(list)
+				setJobs(Array.isArray(list) ? list : [])
 			} catch (err) {
 				const status = err?.response?.status
 				const message = err?.response?.data?.message
@@ -49,9 +77,7 @@ const DecoratorDashboard = () => {
 			}
 		}
 		fetchJobs()
-	}, [authLoading, user, role, statusFilter])
-
-	const STATUS_STEPS = ['assigned', 'in-progress', 'completed']
+	}, [authLoading, user, effectiveRole, decoratorEmail])
 	const statusColors = {
 		assigned: 'badge-info',
 		'in-progress': 'badge-warning',
@@ -59,27 +85,8 @@ const DecoratorDashboard = () => {
 	}
 	const statusIcons = {
 		assigned: <FaClipboardList />,
-		'in-progress': <FaPlayCircle />,
+		'in-progress': <FaClipboardList />,
 		completed: <FaCheckCircle />,
-	}
-
-	/**
-	 * Update project status to next step in workflow
-	 */
-	const handleStatusUpdate = async (bookingId, newStatus) => {
-		if (!user || role !== 'decorator') return
-		try {
-			await axiosInstance.patch(`/decorator/job-status/${bookingId}`, { status: newStatus })
-			setJobs((prev) => prev.map((p) => (p._id === bookingId ? { ...p, jobStatus: newStatus } : p)))
-		} catch (err) {
-			alert(err?.response?.data?.message || 'Failed to update status')
-		}
-	}
-
-	const getNextStatus = (currentStatus) => {
-		const currentIndex = STATUS_STEPS.indexOf(currentStatus)
-		if (currentIndex < 0) return 'in-progress'
-		return currentIndex < STATUS_STEPS.length - 1 ? STATUS_STEPS[currentIndex + 1] : null
 	}
 
 	const parseAmount = (value) => {
@@ -93,12 +100,35 @@ const DecoratorDashboard = () => {
 		return 0
 	}
 
-	const completedJobs = useMemo(() => jobs.filter((j) => j.jobStatus === 'completed'), [jobs])
-	const activeJobs = useMemo(() => jobs.filter((j) => j.jobStatus !== 'completed'), [jobs])
+	const visibleJobs = useMemo(() => {
+		if (statusFilter === 'all') return jobs
+		return jobs.filter((j) => (j.jobStatus || 'assigned') === statusFilter)
+	}, [jobs, statusFilter])
+
+	const completedCount = useMemo(
+		() => jobs.filter((j) => (j.jobStatus || 'assigned') === 'completed').length,
+		[jobs],
+	)
+	const inProgressCount = useMemo(
+		() => jobs.filter((j) => (j.jobStatus || 'assigned') === 'in-progress').length,
+		[jobs],
+	)
+	const assignedCount = useMemo(
+		() => jobs.filter((j) => (j.jobStatus || 'assigned') === 'assigned').length,
+		[jobs],
+	)
+	const completedJobs = useMemo(
+		() => jobs.filter((j) => (j.jobStatus || 'assigned') === 'completed'),
+		[jobs],
+	)
 	const totalEarnings = useMemo(
 		() => completedJobs.reduce((sum, j) => sum + parseAmount(j.price ?? j.amount), 0),
 		[completedJobs],
 	)
+
+	const setFilter = (filter) => {
+		setStatusFilter(filter)
+	}
 
 	if (authLoading) {
 		return (
@@ -144,31 +174,63 @@ const DecoratorDashboard = () => {
 				transition={{ delay: 0.1 }}
 				className="grid grid-cols-2 md:grid-cols-4 gap-4"
 			>
-				<div className="card bg-success/10 border border-success/20">
+				<div
+					className={`card bg-success/10 border border-success/20 cursor-pointer ${statusFilter === 'completed' ? 'ring-1 ring-success/40' : ''}`}
+					onClick={() => setFilter('completed')}
+					role="button"
+					tabIndex={0}
+					onKeyDown={(e) => {
+						if (e.key === 'Enter' || e.key === ' ') setFilter('completed')
+					}}
+				>
 					<div className="card-body py-4 px-4">
 						<p className="text-xs text-base-content/60">Completed</p>
 						<p className="text-2xl font-bold text-success">
-							{completedJobs.length}
+							{completedCount}
 						</p>
 					</div>
 				</div>
-				<div className="card bg-primary/10 border border-primary/20">
+				<div
+					className={`card bg-primary/10 border border-primary/20 cursor-pointer ${statusFilter === 'in-progress' ? 'ring-1 ring-primary/40' : ''}`}
+					onClick={() => setFilter('in-progress')}
+					role="button"
+					tabIndex={0}
+					onKeyDown={(e) => {
+						if (e.key === 'Enter' || e.key === ' ') setFilter('in-progress')
+					}}
+				>
 					<div className="card-body py-4 px-4">
 						<p className="text-xs text-base-content/60">Active</p>
 						<p className="text-2xl font-bold text-primary">
-							{activeJobs.length}
+							{inProgressCount}
 						</p>
 					</div>
 				</div>
-				<div className="card bg-warning/10 border border-warning/20">
+				<div
+					className={`card bg-warning/10 border border-warning/20 cursor-pointer ${statusFilter === 'assigned' ? 'ring-1 ring-warning/40' : ''}`}
+					onClick={() => setFilter('assigned')}
+					role="button"
+					tabIndex={0}
+					onKeyDown={(e) => {
+						if (e.key === 'Enter' || e.key === ' ') setFilter('assigned')
+					}}
+				>
 					<div className="card-body py-4 px-4">
 						<p className="text-xs text-base-content/60">Assigned</p>
 						<p className="text-2xl font-bold text-warning">
-							{jobs.filter((j) => (j.jobStatus || 'assigned') === 'assigned').length}
+							{assignedCount}
 						</p>
 					</div>
 				</div>
-				<div className="card bg-secondary/10 border border-secondary/20">
+				<div
+					className={`card bg-secondary/10 border border-secondary/20 cursor-pointer ${statusFilter === 'completed' ? 'ring-1 ring-secondary/40' : ''}`}
+					onClick={() => setFilter('completed')}
+					role="button"
+					tabIndex={0}
+					onKeyDown={(e) => {
+						if (e.key === 'Enter' || e.key === ' ') setFilter('completed')
+					}}
+				>
 					<div className="card-body py-4 px-4">
 						<p className="text-xs text-base-content/60">Earnings</p>
 						<p className="text-xl font-bold text-secondary">
@@ -203,15 +265,19 @@ const DecoratorDashboard = () => {
 						)}
 						{!loading && !error && jobs.length === 0 && (
 							<div className="alert alert-info">
-								<span>No jobs found.</span>
+								<span>No assigned jobs.</span>
 							</div>
 						)}
-						{!loading && !error && jobs.map((job, idx) => {
+						{!loading && !error && jobs.length > 0 && visibleJobs.length === 0 && (
+							<div className="alert alert-info">
+								<span>No jobs match the selected status.</span>
+							</div>
+						)}
+						{!loading && !error && visibleJobs.map((job, idx) => {
 							const jobId = job._id || job.id
 							const currentStatus = job.jobStatus || 'assigned'
-							const nextStatus = getNextStatus(currentStatus)
-							const serviceName = job.roomName || job.serviceName || job.service || '—'
-							const customer = job.userEmail || job.email || job.user?.email || '—'
+							const serviceName = job.roomName || '—'
+							const customer = job.user?.email || '—'
 							const bookingDate = job.bookingDate || job.date
 							const price = parseAmount(job.price ?? job.amount)
 
@@ -257,22 +323,6 @@ const DecoratorDashboard = () => {
 												<FaDollarSign className="inline mr-1" /> {price.toLocaleString()}
 											</p>
 										</div>
-
-										{/* Status Update Section - Mobile Optimized */}
-										{currentStatus !== 'completed' && nextStatus && (
-											<div className="space-y-2 bg-info/10 rounded-lg p-3 border border-info/20">
-												<p className="text-xs font-semibold text-info-content">Next Step</p>
-												<div className="flex gap-2">
-													<button
-														onClick={() => handleStatusUpdate(jobId, nextStatus)}
-														className="btn btn-sm btn-info flex-1 gap-2"
-													>
-														<FaChevronRight className="text-xs" />
-														Update to {nextStatus}
-													</button>
-												</div>
-											</div>
-										)}
 
 										{/* For Completed Projects */}
 										{currentStatus === 'completed' && (

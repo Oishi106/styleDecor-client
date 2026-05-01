@@ -148,7 +148,7 @@ const Booking = () => {
 
       setTimeout(() => {
         // Pass complete booking data to payment page
-        navigate('/stripe-payment', { 
+        navigate('/payment', { 
           state: { 
             booking: { 
               _id: bookingId,

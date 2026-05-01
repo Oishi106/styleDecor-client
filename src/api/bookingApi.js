@@ -22,20 +22,30 @@ export const getUserBookings = async () => {
   }
 }
 
-export const getDecoratorBookings = async (status) => {
+export const getDecoratorBookings = async (statusOrOptions, maybeDecoratorEmail) => {
   try {
-    // Backend uses /decorator/jobs. Keep a fallback for older routes.
-    const params = status ? { status } : undefined
-    try {
-      const response = await axiosInstance.get('/decorator/jobs', { params })
-      return response.data
-    } catch (err) {
-      if (err?.response?.status !== 404) throw err
-      const response = await axiosInstance.get('/decorator/bookings', { params })
-      return response.data
+    // Decorator jobs come from GET /decorator/jobs.
+    // Some backends filter by JWT, others require query params like decoratorEmail.
+    let status = undefined
+    let decoratorEmail = maybeDecoratorEmail
+
+    if (statusOrOptions && typeof statusOrOptions === 'object') {
+      status = statusOrOptions.status
+      decoratorEmail = statusOrOptions.decoratorEmail || statusOrOptions.email || decoratorEmail
+    } else {
+      status = statusOrOptions
     }
+
+    const params = {
+      ...(decoratorEmail ? { decoratorEmail } : {}),
+      ...(status ? { status } : {}),
+    }
+
+    const response = await axiosInstance.get('/decorator/jobs', { params })
+    return response.data
   } catch (error) {
     console.error('Error fetching decorator jobs:', error)
+
     throw error
   }
 }

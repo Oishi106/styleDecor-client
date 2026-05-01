@@ -170,9 +170,9 @@ const MyBookings = () => {
 									<tr key={booking._id || booking.id} className="hover">
 										<td className="font-semibold">#{booking._id || booking.id}</td>
 										<td>
-											<div className="font-semibold">{booking.roomName || booking.serviceName || booking.service || '—'}</div>
+											<div className="font-semibold">{booking.roomName || '—'}</div>
 										</td>
-										<td>{booking.decoratorName || booking.decoratorEmail || booking.decorator || '—'}</td>
+										<td>{booking.decorator?.name || booking.decorator?.email || '—'}</td>
 										<td>
 											<div className="flex items-center gap-2">
 												<FaCalendarAlt className="text-primary" />
@@ -192,13 +192,13 @@ const MyBookings = () => {
 											</div>
 										</td>
 										<td>
-											<span className={`badge ${getStatusBadge(booking.jobStatus || booking.status)}`}>
-												{booking.jobStatus || booking.status || '—'}
+											<span className={`badge ${getStatusBadge(booking.jobStatus)}`}>
+												{booking.jobStatus || '—'}
 											</span>
 										</td>
 										<td>
 											<span className={`badge ${getPaymentBadge(booking.paymentStatus)}`}>
-												{booking.paymentStatus || 'pending'}
+												{booking.paymentStatus || '—'}
 											</span>
 										</td>
 									</tr>

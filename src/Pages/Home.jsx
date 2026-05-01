@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import ServiceCard from '../components/ServiceCard'
 import DecoratorCard from '../components/DecoratorCard'
 import { FaMapMarkedAlt, FaUsers, FaCheckCircle, FaGlobeAsia } from 'react-icons/fa'
+// customize booking removed — reverted to previous home layout
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
@@ -75,8 +76,85 @@ const Home = () => {
     fetchServices()
   }, [])
 
-	// Decorators are loaded on the dashboard after auth; public decorator listing is not wired yet.
-	const mockDecorators = []
+  const topDecorators = [
+    {
+      id: 'decorator-1',
+      name: 'Ayesha Rahman',
+      image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&auto=format&fit=crop&q=80',
+      rating: 4.9,
+      reviews: 126,
+      location: 'Dhaka, Bangladesh',
+      specialization: 'Modern Luxury Interiors',
+      experience: '8+ years of premium interior styling',
+      bio: 'Transforms apartments and penthouses with clean layouts, layered lighting, and custom decor detailing.',
+      specialties: ['Luxury Living Rooms', 'Smart Space Styling', 'Lighting Mood Design'],
+      projects: ['Lakeside Apartment', 'Banani Penthouse Revamp']
+    },
+    {
+      id: 'decorator-2',
+      name: 'Rafiul Karim',
+      image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500&auto=format&fit=crop&q=80',
+      rating: 4.8,
+      reviews: 109,
+      location: 'Chattogram, Bangladesh',
+      specialization: 'Event and Wedding Themes',
+      experience: '10+ years in event and wedding decoration',
+      bio: 'Known for elegant stage concepts and floral experiences designed around each client story.',
+      specialties: ['Wedding Stage Design', 'Floral Art Direction', 'Photo Zone Concepts'],
+      projects: ['Royal Wedding Gala', 'Seaside Reception Set']
+    },
+    {
+      id: 'decorator-3',
+      name: 'Nusrat Jahan',
+      image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=500&auto=format&fit=crop&q=80',
+      rating: 4.9,
+      reviews: 142,
+      location: 'Sylhet, Bangladesh',
+      specialization: 'Scandinavian and Minimal Decor',
+      experience: '7+ years crafting calm, modern spaces',
+      bio: 'Blends neutral palettes, texture-rich materials, and practical layouts for long-term comfort.',
+      specialties: ['Scandinavian Homes', 'Minimal Workspace', 'Custom Decor Curation'],
+      projects: ['Tea Valley Villa', 'Minimal Studio Suite']
+    },
+    {
+      id: 'decorator-4',
+      name: 'Imran Hossain',
+      image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=500&auto=format&fit=crop&q=80',
+      rating: 4.7,
+      reviews: 97,
+      location: 'Khulna, Bangladesh',
+      specialization: 'Corporate and Office Aesthetics',
+      experience: '9+ years in commercial transformation',
+      bio: 'Creates productivity-focused office interiors that still feel premium, warm, and brand-aligned.',
+      specialties: ['Office Branding', 'Reception Concepts', 'Conference Room Design'],
+      projects: ['Tech Hub Workspace', 'Executive Office Refresh']
+    }
+  ]
+
+  const faqItems = [
+    {
+      question: 'How do I book a decorator from the home page?',
+      answer:
+        'Choose your preferred service, open details, and confirm a date with payment. Our team contacts you quickly to finalize your style briefing.'
+    },
+    {
+      question: 'Do you provide fully customized decoration packages?',
+      answer:
+        'Yes. We design each project from scratch based on space size, event type, budget, and your color/theme preference.'
+    },
+    {
+      question: 'Can I select the same top decorator for recurring projects?',
+      answer:
+        'Absolutely. If the decorator is available, you can request the same professional for follow-up projects or seasonal refreshes.'
+    },
+    {
+      question: 'What happens if I need to reschedule my booking?',
+      answer:
+        'You can reschedule through your dashboard booking history. We recommend requesting changes at least 24 hours before the scheduled slot.'
+    }
+  ]
+
+// customize booking handlers removed
 
   return (
     <div className="min-h-screen">
@@ -136,6 +214,7 @@ const Home = () => {
         </div>
       </section>
 
+
       {/* Services Section */}
       <section className="py-16 px-6 lg:px-12 max-w-7xl mx-auto">
         <div className="text-center mb-12">
@@ -182,11 +261,28 @@ const Home = () => {
               Meet our talented team of professional interior decorators
             </p>
           </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+            {[
+              { label: 'Avg. Rating', value: '4.8/5' },
+              { label: 'Decorators Active', value: '40+' },
+              { label: 'Projects Completed', value: '1200+' },
+              { label: 'Client Return Rate', value: '91%' }
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                className="rounded-2xl border border-primary/20 bg-base-100/80 backdrop-blur p-4 text-center shadow-md"
+              >
+                <p className="text-xs uppercase tracking-wider text-base-content/60">{stat.label}</p>
+                <p className="text-xl md:text-2xl font-extrabold text-primary mt-1">{stat.value}</p>
+              </div>
+            ))}
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
-            {mockDecorators.map((decorator, index) => (
+            {topDecorators.map((decorator, index) => (
               <motion.div
-                key={index}
+                key={decorator.id}
                 initial={{ opacity: 0, x: index % 2 === 0 ? -100 : 100 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
@@ -197,8 +293,78 @@ const Home = () => {
               </motion.div>
             ))}
           </div>
+
+          <div className="text-center mt-10">
+            <Link to="/services" className="btn btn-primary btn-wide">
+              Book with Top Decorators
+            </Link>
+          </div>
         </div>
       </section>
+
+
+      
+      {/* Customize Decoration Section */}
+      <section className="py-16 px-6 lg:px-12">
+        <div className="max-w-7xl mx-auto">
+          <div className="rounded-3xl overflow-hidden border border-primary/15 bg-linear-to-br from-base-100 via-base-100 to-primary/10 shadow-2xl">
+            <div className="grid grid-cols-1 lg:grid-cols-2 items-stretch">
+              <div className="p-8 md:p-12 lg:p-14 flex flex-col justify-center">
+                <p className="uppercase tracking-[0.3em] text-xs text-primary font-semibold mb-3">Tailored Concepts</p>
+                <h2 className="text-4xl md:text-5xl font-bold mb-5 leading-tight">
+                  Customize Decoration Packages for Your Space
+                </h2>
+                <p className="text-base-content/70 text-lg mb-6 max-w-xl">
+                  Choose the style, room count, and premium add-ons that match your event or interior vision.
+                  Build a package that feels personal instead of one-size-fits-all.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8 max-w-2xl">
+                  <div className="rounded-2xl border border-base-300 bg-base-100 p-4 shadow-sm">
+                    <p className="text-sm text-base-content/60">Starting From</p>
+                    <p className="text-2xl font-extrabold text-primary">$100</p>
+                  </div>
+                  <div className="rounded-2xl border border-base-300 bg-base-100 p-4 shadow-sm">
+                    <p className="text-sm text-base-content/60">Flexible Plans</p>
+                    <p className="text-2xl font-extrabold text-primary">3 Options</p>
+                  </div>
+                  <div className="rounded-2xl border border-base-300 bg-base-100 p-4 shadow-sm">
+                    <p className="text-sm text-base-content/60">Fast Booking</p>
+                    <p className="text-2xl font-extrabold text-primary">1 Click</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <Link to="/customize" className="btn btn-primary btn-lg">
+                    Customize Decoration
+                  </Link>
+                  <Link to="/services" className="btn btn-outline btn-lg">
+                    Browse Services
+                  </Link>
+                </div>
+              </div>
+
+              <div className="relative min-h-[320px] lg:min-h-full">
+                <img
+                  src="https://images.unsplash.com/photo-1551135049-8a33b5883817?w=1200&auto=format&fit=crop&q=80"
+                  alt="Customized decoration preview"
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+                <div className="absolute inset-0 bg-linear-to-t from-black/55 via-black/15 to-transparent"></div>
+                <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8 text-white">
+                  <div className="inline-flex items-center rounded-full bg-white/15 px-4 py-2 text-sm backdrop-blur">
+                    Premium styling with curated room-by-room planning
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+     
+      {/* Home inline customize booking removed */}
+
 
       {/* Coverage Map Preview */}
       <section className="py-16 px-6 lg:px-12 max-w-7xl mx-auto">
@@ -445,6 +611,47 @@ const Home = () => {
           </div>
 
           
+        </div>
+      </section>
+
+
+       {/* Premium FAQ Section */}
+      <section className="py-20 px-6 lg:px-12">
+        <div className="max-w-7xl mx-auto">
+          <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-linear-to-br from-base-100 via-base-100 to-primary/10 p-8 md:p-12 shadow-2xl">
+            <div className="pointer-events-none absolute -top-16 -right-16 h-56 w-56 rounded-full bg-primary/20 blur-3xl"></div>
+            <div className="pointer-events-none absolute -bottom-20 -left-16 h-64 w-64 rounded-full bg-secondary/20 blur-3xl"></div>
+
+            <div className="relative z-10 text-center mb-10">
+              <p className="uppercase text-xs tracking-[0.3em] text-primary font-semibold mb-3">Client Concierge</p>
+              <h2 className="text-4xl md:text-5xl font-bold mb-4">Frequently Asked Questions</h2>
+              <p className="max-w-2xl mx-auto text-base-content/70">
+                Everything you need to know before booking your next interior or event decoration project.
+              </p>
+              
+            </div>
+
+            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {faqItems.map((item, index) => (
+                <motion.details
+                  key={item.question}
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.45, delay: index * 0.08 }}
+                  viewport={{ once: false, amount: 0.3 }}
+                  className="group rounded-2xl border border-base-content/10 bg-base-100/80 backdrop-blur p-6 shadow-lg open:border-primary/40"
+                >
+                  <summary className="list-none cursor-pointer flex items-center justify-between gap-4">
+                    <h3 className="text-lg font-semibold text-base-content">{item.question}</h3>
+                    <span className="h-7 w-7 shrink-0 rounded-full bg-primary/10 text-primary grid place-items-center text-lg font-bold transition-transform duration-200 group-open:rotate-45">
+                      +
+                    </span>
+                  </summary>
+                  <p className="mt-4 text-sm leading-relaxed text-base-content/70">{item.answer}</p>
+                </motion.details>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
     </div>

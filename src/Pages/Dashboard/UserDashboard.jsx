@@ -177,8 +177,10 @@ const UserDashboard = () => {
 											<p className="font-semibold">{b.roomName || b.serviceName}</p>
 											<p className="text-sm text-base-content/60">Price: ${b.price}</p>
 											<p className="text-xs text-base-content/60">Payment: {b.paymentStatus} • Job: {b.jobStatus}</p>
-											{b.decoratorName && (
-												<p className="text-xs text-base-content/60">Decorator: {b.decoratorName}</p>
+											{(b.decorator?.name || b.decorator?.email) && (
+												<p className="text-xs text-base-content/60">
+													Decorator: {b.decorator?.name || b.decorator?.email}
+												</p>
 											)}
 										</div>
 									</div>

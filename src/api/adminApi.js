@@ -113,21 +113,6 @@ export const getAdminDecorators = async () => {
 
 // Admin: assign decorator to a booking/event
 export const assignDecoratorToBooking = async (bookingId, payload) => {
-  const candidates = [
-    `/bookings/assign-decorator/${bookingId}`,
-    `/admin/bookings/${bookingId}/assign-decorator`,
-    `/admin/bookings/${bookingId}/assign`,
-  ]
-  let lastError = null
-  for (const path of candidates) {
-    try {
-      const response = await axiosInstance.patch(path, payload)
-      return response.data
-    } catch (err) {
-      lastError = err
-      if (err?.response?.status === 404) continue
-      throw err
-    }
-  }
-  throw lastError
+  const response = await axiosInstance.patch(`/bookings/assign-decorator/${bookingId}`, payload)
+  return response.data
 }

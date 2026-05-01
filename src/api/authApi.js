@@ -19,9 +19,9 @@ export const loginRequest = async (email, password) => {
   for (const path of candidates) {
     try {
       const response = await axiosInstance.post(path, { email, password })
-		  if (!envPath && typeof window !== 'undefined') {
-			  window.localStorage.setItem('authLoginPath', path)
-		  }
+	  if (!envPath && typeof window !== 'undefined') {
+		  window.localStorage.setItem('authLoginPath', path)
+	  }
       return response.data
     } catch (err) {
       lastError = err

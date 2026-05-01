@@ -1,25 +1,10 @@
-/**
- * Payment Component
- * 
- * Professional Stripe checkout interface for StyleDecor
- * Features:
- * - Stripe Elements integration
- * - Real payment processing
- * - Order summary with itemized pricing
- * - Secure payment processing with loading state
- * - Success confirmation with animation
- * - Integration with backend APIs
- * 
- * Design: Modern & Minimalist with gradient backgrounds
- * Responsive: Mobile-optimized layout
- */
-
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { FaLock, FaCheckCircle } from 'react-icons/fa'
+import { FaLock, FaCheckCircle, FaCreditCard, FaApple, FaGoogle, FaArrowLeft } from 'react-icons/fa'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
+import { useAuth } from '../context/AuthProvider'
 import { createPaymentIntent, confirmPayment } from '../api/paymentApi'
 
 // Initialize Stripe with public key from environment
@@ -49,8 +34,7 @@ const Toast = ({ message, type, onClose }) => {
   )
 }
 
-// Stripe Payment Form Component
-const PaymentForm = ({ booking, service, onSuccess }) => {
+const PaymentForm = ({ booking, service, paymentMethod, onSuccess }) => {
   const stripe = useStripe()
   const elements = useElements()
   const [isProcessing, setIsProcessing] = useState(false)
@@ -67,13 +51,15 @@ const PaymentForm = ({ booking, service, onSuccess }) => {
           return
         }
 
-        const response = await createPaymentIntent(booking.price * 100, booking._id)
+        const response = await createPaymentIntent(Math.round(paymentAmountForBooking(booking) * 100), booking._id)
         setClientSecret(response.clientSecret)
       } catch (error) {
         console.error('Error getting payment intent:', error)
         setToast({ message: 'Failed to initialize payment', type: 'error' })
       }
     }
+
+    const paymentAmountForBooking = (booking) => Number(booking?.price ?? booking?.amount ?? 0)
 
     getPaymentIntent()
   }, [booking?._id])
@@ -199,12 +185,25 @@ const PaymentForm = ({ booking, service, onSuccess }) => {
 const Payment = () => {
   const navigate = useNavigate()
   const location = useLocation()
+  const { user, loading: authLoading } = useAuth()
   
   // Booking data passed from previous page
   const { booking, service } = location.state || {}
+  const paymentAmount = Number(booking?.price ?? booking?.amount ?? 0)
   
   // Payment state management
+  const [paymentMethod, setPaymentMethod] = useState('card')
   const [paymentSuccess, setPaymentSuccess] = useState(false)
+  const [isPageValid, setIsPageValid] = useState(true)
+
+  useEffect(() => {
+    if (!booking || !booking._id) {
+      setIsPageValid(false)
+    }
+  }, [booking])
+
+  const displayName = user?.name || user?.displayName
+  const userReady = !!(user && displayName && user.email)
 
   const handlePaymentSuccess = () => {
     setPaymentSuccess(true)
@@ -253,57 +252,184 @@ const Payment = () => {
     )
   }
 
+  if (!isPageValid) {
+    return (
+      <div className="min-h-screen bg-linear-to-br from-base-100 via-primary/5 to-secondary/5 flex items-center justify-center px-6">
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.6 }}
+          className="card bg-base-100 shadow-2xl max-w-lg w-full text-center p-12"
+        >
+          <h1 className="text-3xl font-bold mb-4">No Booking Found</h1>
+          <p className="text-lg text-base-content/70 mb-8">
+            Please create a booking first before proceeding to payment.
+          </p>
+          <button
+            onClick={() => navigate('/services')}
+            className="btn btn-primary btn-lg w-full"
+          >
+            Back to Services
+          </button>
+        </motion.div>
+      </div>
+    )
+  }
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <span className="loading loading-spinner loading-lg text-primary"></span>
+      </div>
+    )
+  }
+
+  if (!userReady) {
+    return (
+      <div className="min-h-screen bg-linear-to-br from-base-100 via-primary/5 to-secondary/5 flex items-center justify-center px-6">
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.6 }}
+          className="card bg-base-100 shadow-2xl max-w-lg w-full text-center p-12"
+        >
+          <h1 className="text-3xl font-bold mb-4">User Information Incomplete</h1>
+          <p className="text-lg text-base-content/70 mb-8">
+            User information incomplete. Please wait or re-login.
+          </p>
+          <button onClick={() => navigate('/login')} className="btn btn-primary btn-lg w-full">Go to Login</button>
+        </motion.div>
+      </div>
+    )
+  }
+
   /**
    * Main Payment Form View
    */
   return (
     <div className="min-h-screen bg-linear-to-br from-base-100 via-primary/5 to-secondary/5 py-12 px-4 sm:px-6 lg:px-12">
-      <div className="max-w-3xl mx-auto">
-        {/* Page Header */}
+      <div className="max-w-5xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-12"
+          className="mb-8"
         >
-          <h1 className="text-4xl sm:text-5xl font-bold mb-3">Complete Payment</h1>
-          <p className="text-base sm:text-lg text-base-content/60">Secure checkout powered by Stripe</p>
+          <button onClick={() => navigate(-1)} className="btn btn-ghost gap-2 mb-6">
+            <FaArrowLeft /> Back to Booking
+          </button>
+          <h1 className="text-5xl font-bold mb-3">Choose Payment Method</h1>
+          <p className="text-lg text-base-content/60">Select your preferred way to pay for your booking</p>
         </motion.div>
 
-        {/* Main Payment Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="card bg-base-100 shadow-2xl p-6 sm:p-8 mb-8"
-        >
-          {/* Order Summary Section */}
-          <div className="mb-8 pb-8 border-b-2 border-base-200">
-            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <span>Order Summary</span>
-            </h2>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-base-content/70">{booking?.roomName || 'Service'}</span>
-                <span className="font-bold text-lg">${booking?.price?.toFixed(2) || '0.00'}</span>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="lg:col-span-2"
+          >
+            <div className="space-y-4 mb-8">
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                onClick={() => setPaymentMethod('card')}
+                className={`card cursor-pointer transition-all border-2 ${paymentMethod === 'card' ? 'border-primary bg-primary/5 shadow-lg' : 'border-base-300 bg-base-100 hover:border-primary/40'}`}
+              >
+                <div className="card-body p-5 flex-row items-center gap-4">
+                  <div className={`w-14 h-14 rounded-2xl grid place-items-center text-2xl ${paymentMethod === 'card' ? 'bg-primary text-primary-content' : 'bg-base-200 text-base-content'}`}>
+                    <FaCreditCard />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="card-title text-xl mb-1">Credit or Debit Card</h3>
+                    <p className="text-base-content/60">Pay securely using Visa, Mastercard, or Amex</p>
+                  </div>
+                  <div className="badge badge-primary">Recommended</div>
+                </div>
+              </motion.div>
+
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                onClick={() => setPaymentMethod('apple')}
+                className={`card cursor-pointer transition-all border-2 ${paymentMethod === 'apple' ? 'border-primary bg-primary/5 shadow-lg' : 'border-base-300 bg-base-100 hover:border-primary/40'}`}
+              >
+                <div className="card-body p-5 flex-row items-center gap-4">
+                  <div className={`w-14 h-14 rounded-2xl grid place-items-center text-2xl ${paymentMethod === 'apple' ? 'bg-primary text-primary-content' : 'bg-base-200 text-base-content'}`}>
+                    <FaApple />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="card-title text-xl mb-1">Apple Pay</h3>
+                    <p className="text-base-content/60">Fast checkout on supported devices</p>
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                onClick={() => setPaymentMethod('google')}
+                className={`card cursor-pointer transition-all border-2 ${paymentMethod === 'google' ? 'border-primary bg-primary/5 shadow-lg' : 'border-base-300 bg-base-100 hover:border-primary/40'}`}
+              >
+                <div className="card-body p-5 flex-row items-center gap-4">
+                  <div className={`w-14 h-14 rounded-2xl grid place-items-center text-2xl ${paymentMethod === 'google' ? 'bg-primary text-primary-content' : 'bg-base-200 text-base-content'}`}>
+                    <FaGoogle />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="card-title text-xl mb-1">Google Pay</h3>
+                    <p className="text-base-content/60">Quick payment with your Google account</p>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="card bg-base-100 shadow-2xl p-6 sm:p-8 mb-8"
+            >
+              <div className="mb-8 pb-8 border-b-2 border-base-200">
+                <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                  <span>Order Summary</span>
+                </h2>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center gap-4">
+                    <span className="text-base-content/70">{booking?.roomName || service?.service_name || 'Service'}</span>
+                    <span className="font-bold text-lg">${paymentAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="divider my-2"></div>
+                  <div className="flex justify-between text-xl font-bold pt-2">
+                    <span>Total Amount</span>
+                    <span className="text-primary">${paymentAmount.toFixed(2)}</span>
+                  </div>
+                </div>
               </div>
-              <div className="divider my-2"></div>
-              <div className="flex justify-between text-xl font-bold pt-2">
-                <span>Total Amount</span>
-                <span className="text-primary">${booking?.price?.toFixed(2) || '0.00'}</span>
+
+              <Elements stripe={stripePromise}>
+                <PaymentForm booking={booking} service={service} paymentMethod={paymentMethod} onSuccess={handlePaymentSuccess} />
+              </Elements>
+            </motion.div>
+          </motion.div>
+
+          <aside className="space-y-6">
+            <div className="card bg-base-100 shadow-lg p-6 md:p-8 sticky top-28">
+              <h3 className="text-2xl font-bold mb-4">Payment Details</h3>
+              <div className="space-y-3 text-base-content/70 mb-6">
+                <p className="flex justify-between gap-4"><span>Booking</span><span className="font-semibold text-base-content">{booking?.roomName || service?.service_name || 'Service'}</span></p>
+                <p className="flex justify-between gap-4"><span>Customer</span><span className="font-semibold text-base-content">{displayName || booking?.name || 'Guest'}</span></p>
+                <p className="flex justify-between gap-4"><span>Email</span><span className="font-semibold text-base-content">{booking?.email || user?.email || '-'}</span></p>
+              </div>
+
+              <div className="rounded-2xl bg-primary/5 p-5 mb-6">
+                <p className="text-sm text-base-content/60">Payable Amount</p>
+                <p className="text-4xl font-extrabold text-primary">${paymentAmount.toFixed(2)}</p>
+              </div>
+
+              <div className="flex items-center gap-3 text-sm text-base-content/60">
+                <FaLock className="text-primary" />
+                <span>Stripe-powered secure checkout</span>
               </div>
             </div>
-          </div>
-
-          {/* Payment Form with Stripe */}
-          <Elements stripe={stripePromise}>
-            <PaymentForm 
-              booking={booking} 
-              service={service} 
-              onSuccess={handlePaymentSuccess}
-            />
-          </Elements>
-        </motion.div>
+          </aside>
+        </div>
       </div>
     </div>
   )

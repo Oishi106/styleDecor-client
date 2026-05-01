@@ -2,8 +2,8 @@ import axios from 'axios'
 
 const axiosInstance = axios.create({
   // Prefer same-origin so Vite dev proxy can forward API requests and avoid CORS.
-  // Set VITE_API_BASE_URL to use an absolute backend URL (e.g. https://style-decor-server-fghchs7vz-mahmuda-afroz-oishis-projects.vercel.app).
-  baseURL: import.meta.env.VITE_API_BASE_URL || '',
+  // Set VITE_API_BASE_URL to use an absolute backend URL (e.g. https://style-decor-server-peach.vercel.app).
+  baseURL: (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, ''),
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
@@ -13,9 +13,10 @@ const axiosInstance = axios.create({
 // Request Interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
-    // Add auth token if available
+    // Add auth token for protected requests
     const token = localStorage.getItem('token')
     if (token) {
+      config.headers = config.headers || {}
       config.headers.Authorization = `Bearer ${token}`
     }
     return config
@@ -36,6 +37,11 @@ axiosInstance.interceptors.response.use(
       localStorage.removeItem('token')
       localStorage.removeItem('role')
       localStorage.removeItem('user')
+
+      // Notify the app so it can redirect to login.
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('auth:unauthorized'))
+      }
     }
     return Promise.reject(error)
   }

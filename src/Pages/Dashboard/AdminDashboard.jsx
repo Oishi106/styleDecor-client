@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
+import Swal from 'sweetalert2'
 import { useAuth } from '../../context/AuthProvider'
 import {
 	addDecoratorManually,
@@ -123,7 +124,13 @@ const AdminDashboard = () => {
 		if (!id) return
 		try {
 			await approveDecoratorApplication(id, { email: application?.email })
-			await loadApplications()
+			setApplications((prev) =>
+				prev.map((a) => {
+					const aid = a?._id || a?.id
+					if (aid !== id) return a
+					return { ...a, status: 'approved' }
+				}),
+			)
 		} catch (err) {
 			alert(err?.response?.data?.message || 'Failed to approve application')
 		}
@@ -134,7 +141,13 @@ const AdminDashboard = () => {
 		if (!id) return
 		try {
 			await rejectDecoratorApplication(id, { email: application?.email })
-			await loadApplications()
+			setApplications((prev) =>
+				prev.map((a) => {
+					const aid = a?._id || a?.id
+					if (aid !== id) return a
+					return { ...a, status: 'rejected' }
+				}),
+			)
 		} catch (err) {
 			alert(err?.response?.data?.message || 'Failed to reject application')
 		}
@@ -179,31 +192,35 @@ const AdminDashboard = () => {
 	const handleAssign = async (e) => {
 		e.preventDefault()
 		if (!assigningBooking) return
-		if (!assignEmail) {
+		const selectedEmail = (assignEmail || '').trim()
+		if (!selectedEmail) {
 			alert('Please select a decorator')
 			return
 		}
 		setAssignLoading(true)
 		try {
 			const bookingId = assigningBooking._id || assigningBooking.id
-			await assignDecoratorToBooking(bookingId, { decoratorEmail: assignEmail })
-			const selected = decorators.find((d) => {
-				const email = d.email || d.decoratorEmail || d.userEmail
-				return email === assignEmail
-			})
+			const selected = decorators.find((d) => d.email === selectedEmail)
 			const selectedName = selected?.name || selected?.fullName || selected?.displayName || null
+			await assignDecoratorToBooking(bookingId, { decoratorEmail: selectedEmail })
 			setBookings((prev) =>
 				prev.map((b) => {
 					const id = b._id || b.id
 					if (id !== bookingId) return b
 					return {
 						...b,
-						decorator: { email: assignEmail, name: selectedName },
+						decorator: { email: selectedEmail, name: selectedName },
 						jobStatus: 'assigned',
 					}
 				}),
 			)
 			closeAssign()
+			await Swal.fire({
+				icon: 'success',
+				title: 'Assigned',
+				text: 'Decorator assigned successfully.',
+				confirmButtonText: 'OK',
+			})
 		} catch (err) {
 			alert(err?.response?.data?.message || 'Failed to assign decorator')
 			setAssignLoading(false)
@@ -318,15 +335,15 @@ const AdminDashboard = () => {
 											{bookings.map((b) => {
 												const id = b._id || b.id
 												const paymentStatus = normalizePaymentStatus(b.paymentStatus)
-												const decoratorEmail = b.decorator?.email || b.decoratorEmail || b.decorator?.userEmail
-												const decoratorName = b.decorator?.name || b.decoratorName
+																const decoratorEmail = b.decorator?.email
+																const decoratorName = b.decorator?.name
 												const currentDecorator = decoratorName
 													? `${decoratorName}${decoratorEmail ? ` (${decoratorEmail})` : ''}`
-													: (decoratorEmail || '—')
+																	: (decoratorEmail || '—')
 												return (
 													<tr key={id}>
 														<td className="font-semibold">{id}</td>
-														<td>{b.userEmail || b.email || '—'}</td>
+																<td>{b.user?.email || '—'}</td>
 														<td>{b.roomName || b.serviceName || b.service || '—'}</td>
 														<td>
 															{b.bookingDate || b.date
@@ -386,8 +403,8 @@ const AdminDashboard = () => {
 							</p>
 							<div className="bg-base-200 rounded-lg p-3 text-sm">
 								<div><span className="font-semibold">Booking:</span> {assigningBooking._id || assigningBooking.id}</div>
-								<div><span className="font-semibold">Service:</span> {assigningBooking.roomName || assigningBooking.serviceName || assigningBooking.service || '—'}</div>
-								<div><span className="font-semibold">User:</span> {assigningBooking.userEmail || assigningBooking.email || '—'}</div>
+								<div><span className="font-semibold">Service:</span> {assigningBooking.roomName || '—'}</div>
+								<div><span className="font-semibold">User:</span> {assigningBooking.user?.email || '—'}</div>
 							</div>
 
 							<form onSubmit={handleAssign} className="space-y-3">
@@ -396,19 +413,20 @@ const AdminDashboard = () => {
 									<select
 										className="select select-bordered"
 										value={assignEmail}
-										onChange={(e) => setAssignEmail(e.target.value)}
+										onChange={(e) => setAssignEmail((e.target.value || '').trim())}
 										disabled={assignLoading || decoratorsLoading}
 									>
 										<option value="">Select a decorator</option>
-										{decorators.map((d) => {
-											const email = d.email || d.decoratorEmail || d.userEmail
-											const key = d._id || email
-											const name = d.name || d.fullName || d.displayName
+										{decorators.map((decorator) => {
+											const email = decorator?.email
+											if (!email) return null
+											const key = decorator?._id || email
+											const name = decorator?.name || decorator?.fullName || decorator?.displayName || 'Decorator'
 											return (
 												<option key={key} value={email}>
-													{name ? `${name} (${email})` : email}
-											</option>
-										)
+													{name} ({email})
+												</option>
+											)
 										})}
 									</select>
 								</label>
