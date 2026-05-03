@@ -2,7 +2,7 @@ import React from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthProvider'
 
-const PrivateRoutes = ({ children }) => {
+const PrivateRoutes = ({ children }) => {           
   const { user, loading } = useAuth()
   const location = useLocation()
 
