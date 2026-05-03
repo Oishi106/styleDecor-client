@@ -1,7 +1,6 @@
 import React from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthProvider'
-import { FaShieldAlt } from 'react-icons/fa'
 
 const navLinks = [
     { name: 'Home', to: '/' },
@@ -44,7 +43,7 @@ const Navbar = () => {
 
     return (
         <div className="fixed top-0 left-0 right-0 z-50 bg-base-100/90 backdrop-blur shadow-sm">
-            <div className="navbar w-full px-4 lg:px-8">
+            <div className="navbar w-full px-3 sm:px-4 lg:px-8">
                 <div className="navbar-start">
                     <div className="dropdown">
                         <div tabIndex={0} role="button" className="btn btn-ghost lg:hidden">
@@ -99,9 +98,9 @@ const Navbar = () => {
                             </li>
                         </ul>
                     </div>
-                    <Link to="/" className="btn btn-ghost gap-2 px-0 normal-case text-xl">
-                        <FaShieldAlt className="text-primary text-2xl" />
-                        <span className="font-bold text-2xl tracking-tight">StyleDecor</span>
+                    <Link to="/" className="btn btn-ghost gap-1 sm:gap-2 px-0 normal-case text-xl min-w-0">
+                        <img src="/logo.png" alt="StyleDecor logo" className="h-15 w-15 object-contain shrink-0" />
+                        <span className="hidden sm:inline font-bold text-xl lg:text-2xl tracking-tight truncate">StyleDecor</span>
                     </Link>
                 </div>
 
@@ -111,7 +110,7 @@ const Navbar = () => {
                     </ul>
                 </div>
 
-                <div className="navbar-end gap-3">
+                <div className="navbar-end gap-2 sm:gap-3">
                     {!user && (
                         <Link to="/login" className="btn btn-outline btn-sm">
                             Login

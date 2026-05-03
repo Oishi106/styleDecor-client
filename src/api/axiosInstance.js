@@ -1,9 +1,9 @@
 import axios from 'axios'
 
 const axiosInstance = axios.create({
-  // Prefer same-origin so Vite dev proxy can forward API requests and avoid CORS.
-  // Set VITE_API_BASE_URL to use an absolute backend URL (e.g. https://style-decor-server-peach.vercel.app).
-  baseURL: (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, ''),
+  // Default to the local backend the user shared (port 3000).
+  // Override with VITE_API_BASE_URL or VITE_API_PROXY_TARGET when needed.
+  baseURL: (import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_PROXY_TARGET || 'http://localhost:3000').replace(/\/+$/, ''),
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'

@@ -7,7 +7,10 @@ const Footer = () => {
             <footer className="footer p-10 w-full px-6 lg:px-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 {/* Company Info */}
                 <nav>
-                    <h6 className="footer-title">StyleDecor</h6>
+                    <div className="flex items-center gap-3 mb-3">
+                        <img src="/logo.png" alt="StyleDecor logo" className="h-15 w-15 object-contain" />
+                        <h2 className="footer-title mb-0 text-xl">Style Decor</h2>
+                    </div>
                     <p className="text-sm leading-relaxed max-w-xs">
                         Your trusted partner for professional interior decoration and styling services. 
                         Transform your space into something extraordinary.

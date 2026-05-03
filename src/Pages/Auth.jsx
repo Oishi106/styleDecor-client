@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { FaEnvelope, FaLock, FaUser, FaPhone, FaLink, FaInfoCircle } from 'react-icons/fa'
+import { FaEnvelope, FaLock, FaUser, FaPhone, FaLink, FaInfoCircle, FaGoogle, FaPalette, FaShieldAlt } from 'react-icons/fa'
 import { registerRequest, applyDecoratorRequest } from '../api/authApi'
 import { useAuth } from '../context/AuthProvider'
+import { storeUserInDatabase } from '../api/userApi'
 
 const initialForms = {
   userLogin: { email: '', password: '' },
@@ -14,13 +15,60 @@ const initialForms = {
 const Auth = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { login, refreshMe, role } = useAuth()
+  const { login, loginWithGoogle, refreshMe, role } = useAuth()
+  const roleLabels = {
+    user: 'User',
+    decorator: 'Decorator',
+    admin: 'Admin'
+  }
   const [isUserRegister, setIsUserRegister] = useState(false)
+  const [selectedRole, setSelectedRole] = useState('user')
   const [isDecoratorApply, setIsDecoratorApply] = useState(false)
   const [forms, setForms] = useState(initialForms)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [userPreview, setUserPreview] = useState('')
+
+  const withTimeout = (promise, timeoutMs, timeoutMessage) => Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs)
+    }),
+  ])
+
+  const getSocialAuthErrorMessage = (err) => {
+    const code = err?.code || ''
+    if (code.includes('popup-blocked')) return 'Popup blocked. Please allow popups and try again.'
+    if (code.includes('popup-closed-by-user')) return 'Google sign-in popup was closed before completing login.'
+    if (code.includes('invalid-continue-uri')) return 'Firebase authDomain is invalid. Set VITE_authDomain to a valid domain (example: your-project.firebaseapp.com).'
+    if (code.includes('unauthorized-domain')) return 'This domain is not authorized in Firebase Authentication settings.'
+    if (code.includes('network-request-failed')) return 'Network error during Google login. Please check your internet.'
+    return err?.message || 'Google login failed'
+  }
+
+  const roleConfig = {
+    user: {
+      icon: FaUser,
+      headline: 'Book Stunning Decor',
+      subline: 'Explore services and book your style with one click.',
+      activeClass: 'bg-sky-50 border-sky-400 ring-sky-500',
+      panelClass: 'from-sky-500/15 via-cyan-400/10 to-blue-500/15',
+    },
+    decorator: {
+      icon: FaPalette,
+      headline: 'Manage Your Projects',
+      subline: 'Run bookings, update services, and grow your brand.',
+      activeClass: 'bg-rose-50 border-rose-400 ring-rose-500',
+      panelClass: 'from-rose-500/15 via-pink-400/10 to-orange-500/15',
+    },
+    admin: {
+      icon: FaShieldAlt,
+      headline: 'System Security Control',
+      subline: 'Moderate users and keep operations in full control.',
+      activeClass: 'bg-amber-50 border-amber-500 ring-amber-500',
+      panelClass: 'from-amber-500/15 via-orange-400/10 to-red-500/15',
+    },
+  }
 
   const resetModes = () => {
     setForms(initialForms)
@@ -114,6 +162,11 @@ const Auth = () => {
       const me = await refreshMe()
       const resolvedRole = me?.role || role
 
+      if (selectedRole && resolvedRole && selectedRole !== resolvedRole) {
+        setError(`This account is ${roleLabels[resolvedRole] || resolvedRole}. Please select ${roleLabels[resolvedRole] || resolvedRole} role.`)
+        return
+      }
+
       const from = location.state?.from?.pathname
       const requiredRole = requiredRoleFromPath(from)
       if (requiredRole && resolvedRole && requiredRole !== resolvedRole) {
@@ -134,6 +187,41 @@ const Auth = () => {
     } catch (err) {
       const msg = err?.response?.data?.message || err.message || 'Something went wrong'
       setError(msg)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleGoogleLogin = async () => {
+    if (selectedRole !== 'user' || isUserRegister || isDecoratorApply) return
+    setLoading(true)
+    setError('')
+    try {
+      const result = await withTimeout(
+        loginWithGoogle(),
+        30000,
+        'Google sign-in timed out. Please retry and complete popup authorization quickly.'
+      )
+      const socialUser = result?.user
+      if (socialUser) {
+        try {
+          await storeUserInDatabase({
+            name: socialUser.displayName || '',
+            email: socialUser.email || '',
+            photoUrl: socialUser.photoURL || '',
+            provider: 'google',
+            role: 'user',
+            lastLogin: new Date().toISOString(),
+          })
+        } catch {
+          // Do not block login if DB sync fails.
+        }
+      }
+
+      const from = location.state?.from?.pathname || '/dashboard/user'
+      navigate(from, { replace: true })
+    } catch (err) {
+      setError(getSocialAuthErrorMessage(err))
     } finally {
       setLoading(false)
     }
@@ -312,9 +400,17 @@ const Auth = () => {
     )
   }
 
-  const heading = isDecoratorApply ? 'Apply as Decorator' : isUserRegister ? 'Create your account' : 'Login'
+  const heading = isDecoratorApply
+    ? 'Apply as Decorator'
+    : isUserRegister
+      ? 'Create your account'
+      : `${roleLabels[selectedRole]} Login`
 
-  const primaryCta = isDecoratorApply ? 'Apply as Decorator' : isUserRegister ? 'Register' : 'Login'
+  const primaryCta = isDecoratorApply
+    ? 'Apply as Decorator'
+    : isUserRegister
+      ? 'Register'
+      : `Login as ${roleLabels[selectedRole]}`
 
   const toggleCta = isDecoratorApply
     ? 'Back to Login'
@@ -322,29 +418,74 @@ const Auth = () => {
       ? 'Already have an account? Login'
       : "Don't have an account? Register"
 
+  const roleMeta = roleConfig[selectedRole]
+  const ActiveRoleIcon = roleMeta.icon
+
   return (
-    <div className="min-h-screen bg-base-200 flex items-center justify-center py-12 px-4">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_15%_20%,rgba(14,165,233,0.15),transparent_35%),radial-gradient(circle_at_85%_10%,rgba(236,72,153,0.16),transparent_33%),linear-gradient(180deg,#f8fafc_0%,#eef2ff_45%,#f8fafc_100%)] flex items-center justify-center py-12 px-4">
       <div className="w-full max-w-4xl">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="card bg-base-100 shadow-2xl border border-base-300 overflow-hidden"
+          className="card bg-base-100/95 backdrop-blur shadow-2xl border border-base-300 overflow-hidden"
         >
           <div className="grid grid-cols-1 lg:grid-cols-2">
-            <div className="p-8 lg:p-10 border-b lg:border-b-0 lg:border-r border-base-200 bg-linear-to-br from-primary/5 via-base-100 to-secondary/10">
+            <div className={`p-8 lg:p-10 border-b lg:border-b-0 lg:border-r border-base-200 bg-linear-to-br ${roleMeta.panelClass}`}>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-                <div className="p-3 rounded-lg bg-base-100 border border-base-300">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedRole('user')
+                    setIsDecoratorApply(false)
+                    setError('')
+                  }}
+                  className={`p-3 rounded-xl border-2 ring-2 ring-transparent transition-all text-left ${
+                    selectedRole === 'user'
+                      ? roleConfig.user.activeClass
+                      : 'bg-base-100 border-base-300 hover:border-primary'
+                  }`}
+                >
                   <p className="font-semibold">👤 User</p>
                   <p className="text-xs text-base-content/60">Book decorations</p>
-                </div>
-                <div className="p-3 rounded-lg bg-base-100 border border-base-300">
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedRole('decorator')
+                    setIsUserRegister(false)
+                    setIsDecoratorApply(false)
+                    setError('')
+                  }}
+                  className={`p-3 rounded-xl border-2 ring-2 ring-transparent transition-all text-left ${
+                    selectedRole === 'decorator'
+                      ? roleConfig.decorator.activeClass
+                      : 'bg-base-100 border-base-300 hover:border-primary'
+                  }`}
+                >
                   <p className="font-semibold">🎨 Decorator</p>
                   <p className="text-xs text-base-content/60">Manage services</p>
-                </div>
-                <div className="p-3 rounded-lg bg-base-100 border border-base-300">
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedRole('admin')
+                    setIsUserRegister(false)
+                    setIsDecoratorApply(false)
+                    setError('')
+                  }}
+                  className={`p-3 rounded-xl border-2 ring-2 ring-transparent transition-all text-left ${
+                    selectedRole === 'admin'
+                      ? roleConfig.admin.activeClass
+                      : 'bg-base-100 border-base-300 hover:border-primary'
+                  }`}
+                >
                   <p className="font-semibold">🛠 Admin</p>
                   <p className="text-xs text-base-content/60">System control</p>
-                </div>
+                </button>
+              </div>
+              <div className="flex items-center gap-2 mb-2 text-base-content/70">
+                <ActiveRoleIcon className="text-primary" />
+                <p className="text-sm font-medium">{roleMeta.headline}</p>
               </div>
               <h2 className="text-3xl font-bold mb-2">{heading}</h2>
               <p className="text-base-content/70 mb-6">
@@ -352,7 +493,11 @@ const Auth = () => {
                   ? 'Submit your application to become a decorator.'
                   : isUserRegister
                     ? 'Create a new user account.'
-                    : 'Login to your account.'}
+                    : selectedRole === 'admin'
+                      ? 'Login with admin credentials only.'
+                      : selectedRole === 'decorator'
+                        ? 'Login if your decorator account is approved.'
+                        : roleMeta.subline}
               </p>
 
               {error && (
@@ -380,7 +525,22 @@ const Auth = () => {
                 </button>
               </form>
 
-              {toggleCta && (
+              {selectedRole === 'user' && !isUserRegister && !isDecoratorApply && (
+                <>
+                  <div className="divider my-4">or</div>
+                  <button
+                    type="button"
+                    className="btn w-full border-base-300 bg-white text-base-content hover:bg-base-100"
+                    onClick={handleGoogleLogin}
+                    disabled={loading}
+                  >
+                    <FaGoogle className="text-lg" />
+                    Continue with Google
+                  </button>
+                </>
+              )}
+
+              {selectedRole === 'user' && toggleCta && (
                 <button
                   className="btn btn-ghost btn-sm mt-3"
                   onClick={() => {
@@ -400,7 +560,7 @@ const Auth = () => {
                 </button>
               )}
 
-              {!isDecoratorApply && (
+              {selectedRole === 'user' && !isDecoratorApply && (
                 <button
                   className="btn btn-ghost btn-sm mt-1"
                   onClick={() => {
@@ -419,7 +579,7 @@ const Auth = () => {
               <div>
                 <h3 className="text-2xl font-bold mb-3">Role-based access</h3>
                 <p className="text-base-content/70">
-                  Roles are assigned by the backend. Admins are pre-created. Decorators can apply and will be approved by admins. Users can register freely.
+                  Pick a role first, then continue with matching credentials. The experience changes by role for faster and clearer access.
                 </p>
               </div>
               <div className="grid grid-cols-1 gap-3 mt-6">
@@ -445,3 +605,6 @@ const Auth = () => {
 }
 
 export default Auth
+
+
+

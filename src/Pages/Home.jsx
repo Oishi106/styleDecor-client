@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion'
 import ServiceCard from '../components/ServiceCard'
 import DecoratorCard from '../components/DecoratorCard'
@@ -157,9 +158,9 @@ const Home = () => {
 // customize booking handlers removed
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen overflow-x-hidden">
       {/* Hero Section */}
-      <section className="hero min-h-150 relative">
+      <section className="hero min-h-150 relative overflow-hidden">
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
@@ -181,7 +182,7 @@ const Home = () => {
               whileInView={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6, delay: 0.2 }}
               viewport={{ once: false, amount: 0.3 }}
-              className="text-5xl md:text-6xl font-bold mb-6 text-white drop-shadow-lg"
+              className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 text-white drop-shadow-lg"
             >
               Transform Your Space
             </motion.h1>
@@ -216,9 +217,9 @@ const Home = () => {
 
 
       {/* Services Section */}
-      <section className="py-16 px-6 lg:px-12 max-w-7xl mx-auto">
+      <section className="py-16 px-4 sm:px-6 lg:px-12 max-w-7xl mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4">Our Services</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">Our Services</h2>
           <p className="text-base-content/70 max-w-2xl mx-auto">
             Explore our wide range of professional decoration services tailored to your needs
           </p>
@@ -253,10 +254,10 @@ const Home = () => {
       </section>
 
       {/* Top Decorators Section */}
-      <section className="py-16 px-6 lg:px-12 bg-linear-to-b from-base-200 via-base-200 to-base-100">
+      <section className="py-16 px-4 sm:px-6 lg:px-12 bg-linear-to-b from-base-200 via-base-200 to-base-100 overflow-hidden">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">Top Decorators</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Top Decorators</h2>
             <p className="text-base-content/70 max-w-2xl mx-auto">
               Meet our talented team of professional interior decorators
             </p>
@@ -295,7 +296,7 @@ const Home = () => {
           </div>
 
           <div className="text-center mt-10">
-            <Link to="/services" className="btn btn-primary btn-wide">
+            <Link to="/services" className="btn btn-primary w-full sm:w-auto sm:btn-wide">
               Book with Top Decorators
             </Link>
           </div>
@@ -305,7 +306,7 @@ const Home = () => {
 
       
       {/* Customize Decoration Section */}
-      <section className="py-16 px-6 lg:px-12">
+      <section className="py-16 px-4 sm:px-6 lg:px-12 overflow-hidden">
         <div className="max-w-7xl mx-auto">
           <div className="rounded-3xl overflow-hidden border border-primary/15 bg-linear-to-br from-base-100 via-base-100 to-primary/10 ">
             <div className="grid grid-cols-1 lg:grid-cols-2 items-stretch">
@@ -344,7 +345,7 @@ const Home = () => {
                 </div>
               </div>
 
-              <div className="relative min-h-[320px] lg:min-h-full">
+              <div className="relative min-h-80 lg:min-h-full">
                 <img
                   src="https://images.unsplash.com/photo-1551135049-8a33b5883817?w=1200&auto=format&fit=crop&q=80"
                   alt="Customized decoration preview"
@@ -367,9 +368,9 @@ const Home = () => {
 
 
       {/* Coverage Map Preview */}
-      <section className="py-16 px-6 lg:px-12 max-w-7xl mx-auto">
+      <section className="py-16 px-4 sm:px-6 lg:px-12 max-w-7xl mx-auto overflow-hidden">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4">Global Service Coverage</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">Global Service Coverage</h2>
           <p className="text-base-content/70 max-w-2xl mx-auto">
             Expanding our professional decoration services worldwide with presence in multiple countries
           </p>
@@ -408,7 +409,7 @@ const Home = () => {
           viewport={{ once: false, amount: 0.3 }}
           className="card bg-base-100 shadow-2xl overflow-hidden"
         >
-          <div style={{ height: '500px', width: '100%', position: 'relative' }}>
+          <div style={{ height: '420px', width: '100%', position: 'relative' }} className="sm:h-125">
             <MapContainer
               center={[20, 50]}
               zoom={3}
@@ -458,10 +459,10 @@ const Home = () => {
       </section>
 
       {/* Why Choose Us Section */}
-      <section className="py-16 px-6 lg:px-12 bg-linear-to-b from-base-100 via-base-100 to-base-200">
+      <section className="py-16 px-4 sm:px-6 lg:px-12 bg-linear-to-b from-base-100 via-base-100 to-base-200">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">Why Choose StyleDecor?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Choose StyleDecor?</h2>
             <p className="text-base-content/70 max-w-2xl mx-auto">
               We deliver exceptional decoration services with professionalism and creativity
             </p>
@@ -497,9 +498,9 @@ const Home = () => {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-16 px-6 lg:px-12 max-w-7xl mx-auto">
+      <section className="py-16 px-4 sm:px-6 lg:px-12 max-w-7xl mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4">What Our Clients Say</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">What Our Clients Say</h2>
           <p className="text-base-content/70 max-w-2xl mx-auto">
             Real experiences from satisfied customers
           </p>
@@ -542,10 +543,10 @@ const Home = () => {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-16 px-6 lg:px-12 bg-linear-to-b from-base-200 via-base-200 to-base-100">
+      <section className="py-16 px-4 sm:px-6 lg:px-12 bg-linear-to-b from-base-200 via-base-200 to-base-100">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4">How It Works</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">How It Works</h2>
             <p className="text-base-content/70 max-w-2xl mx-auto">
               Simple steps to transform your space with StyleDecor
             </p>
@@ -616,7 +617,7 @@ const Home = () => {
 
 
        {/* Premium FAQ Section */}
-      <section className="py-20 px-6 lg:px-12">
+      <section className="py-20 px-4 sm:px-6 lg:px-12 overflow-hidden">
         <div className="max-w-7xl mx-auto">
           <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-linear-to-br from-base-100 via-base-100 to-primary/10 p-8 md:p-12 ">
             <div className="pointer-events-none absolute -top-16 -right-16 h-56 w-56 rounded-full bg-primary/20 blur-3xl"></div>

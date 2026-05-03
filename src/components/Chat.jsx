@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { FaPaperPlane, FaArrowLeft, FaTrash } from 'react-icons/fa'
 import { useAuth } from '../context/AuthProvider'
 import { useChat } from '../context/ChatProvider'
+import { getMessageSender, getMessageText, getMessageTimestamp, resolveConversationPeer } from '../utils/chatUtils'
 
 const Chat = ({ conversationId, onBack }) => {
   const { user } = useAuth()
@@ -10,7 +11,7 @@ const Chat = ({ conversationId, onBack }) => {
     sendMessage, 
     loading, 
     error, 
-    fetchMessages, 
+    fetchConversationDetail, 
     currentConversation,
     deleteConversation 
   } = useChat()
@@ -28,9 +29,9 @@ const Chat = ({ conversationId, onBack }) => {
 
   useEffect(() => {
     if (conversationId) {
-      fetchMessages(conversationId)
+      fetchConversationDetail(conversationId)
     }
-  }, [conversationId, fetchMessages])
+  }, [conversationId, fetchConversationDetail])
 
   const handleSendMessage = async (e) => {
     e.preventDefault()
@@ -38,7 +39,7 @@ const Chat = ({ conversationId, onBack }) => {
 
     setSending(true)
     try {
-      await sendMessage(conversationId, messageText)
+      await sendMessage(conversationId, messageText, user?.email || '')
       setMessageText('')
     } catch (err) {
       console.error('Error sending message:', err)
@@ -66,7 +67,7 @@ const Chat = ({ conversationId, onBack }) => {
     )
   }
 
-  const decoratorName = currentConversation?.decoratorName || 'Decorator'
+  const peer = resolveConversationPeer(currentConversation, user?.email)
 
   return (
     <div className="flex flex-col h-full bg-base-100 rounded-lg shadow-lg overflow-hidden">
@@ -81,8 +82,8 @@ const Chat = ({ conversationId, onBack }) => {
             <FaArrowLeft />
           </button>
           <div>
-            <h3 className="font-bold text-lg">{decoratorName}</h3>
-            <p className="text-xs opacity-75">Interior Decorator</p>
+            <h3 className="font-bold text-lg">{peer.name}</h3>
+            <p className="text-xs opacity-75">{peer.roleLabel}</p>
           </div>
         </div>
         <button
@@ -103,7 +104,11 @@ const Chat = ({ conversationId, onBack }) => {
           </div>
         ) : (
           messages.map((message, index) => {
-            const isOwn = message.senderId === user?._id || message.sender?.id === user?._id
+            const sender = getMessageSender(message)
+            const myEmail = String(user?.email || '').toLowerCase()
+            const isOwn = String(sender || '').toLowerCase() === myEmail
+            const messageText = getMessageText(message)
+            const timestamp = getMessageTimestamp(message)
             return (
               <div
                 key={message._id || index}
@@ -116,12 +121,14 @@ const Chat = ({ conversationId, onBack }) => {
                       : 'bg-base-200 text-base-content rounded-bl-none'
                   }`}
                 >
-                  <p className="break-all">{message.text}</p>
+                  <p className="break-all">{messageText}</p>
                   <p className={`text-xs mt-1 ${isOwn ? 'opacity-70' : 'opacity-60'}`}>
-                    {new Date(message.createdAt).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
+                    {timestamp
+                      ? new Date(timestamp).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })
+                      : ''}
                   </p>
                 </div>
               </div>

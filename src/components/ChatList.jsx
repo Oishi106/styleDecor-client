@@ -1,28 +1,42 @@
 import React, { useState } from 'react'
-import { FaComments, FaPlus } from 'react-icons/fa'
+import { FaComments } from 'react-icons/fa'
 import { useChat } from '../context/ChatProvider'
+import { useAuth } from '../context/AuthProvider'
 import Chat from './Chat'
+import { getConversationId, getMessageText, resolveConversationPeer } from '../utils/chatUtils'
 
 const ChatList = () => {
+  const { user } = useAuth()
   const { 
     conversations, 
     currentConversation, 
     setCurrentConversation,
     loading, 
     unreadCount,
-    fetchMessages 
+    fetchConversationDetail 
   } = useChat()
   const [selectedId, setSelectedId] = useState(null)
 
   const handleSelectConversation = async (conversation) => {
-    setSelectedId(conversation._id)
+    const conversationId = getConversationId(conversation)
+    if (!conversationId) return
+    setSelectedId(conversationId)
     setCurrentConversation(conversation)
-    await fetchMessages(conversation._id)
+    await fetchConversationDetail(conversationId)
   }
 
   const handleBack = () => {
     setSelectedId(null)
     setCurrentConversation(null)
+  }
+
+  // Get last message from messages array
+  const getLastMessage = (conversation) => {
+    if (Array.isArray(conversation.messages) && conversation.messages.length > 0) {
+      const lastMsg = conversation.messages[conversation.messages.length - 1]
+      return getMessageText(lastMsg) || 'No messages yet'
+    }
+    return 'No messages yet'
   }
 
   // If a conversation is selected, show the chat interface
@@ -67,13 +81,18 @@ const ChatList = () => {
         ) : (
           <div className="divide-y">
             {conversations.map((conversation) => (
+              (() => {
+                const peer = resolveConversationPeer(conversation, user?.email)
+                const conversationId = getConversationId(conversation)
+                if (!conversationId) return null
+                return (
               <button
-                key={conversation._id}
+                key={conversationId}
                 onClick={() => handleSelectConversation(conversation)}
                 className="w-full text-left p-4 hover:bg-base-200 transition-colors duration-200 focus:outline-none focus:bg-base-200"
               >
                 <div className="flex items-center justify-between mb-1">
-                  <h3 className="font-bold">{conversation.decoratorName}</h3>
+                  <h3 className="font-bold">{peer.name}</h3>
                   {conversation.unreadCount > 0 && (
                     <div className="badge badge-primary badge-sm">
                       {conversation.unreadCount}
@@ -81,14 +100,16 @@ const ChatList = () => {
                   )}
                 </div>
                 <p className="text-sm text-base-content/70 line-clamp-1">
-                  {conversation.lastMessage?.text || 'No messages yet'}
+                  {getLastMessage(conversation)}
                 </p>
                 <p className="text-xs text-base-content/50 mt-1">
-                  {conversation.lastMessageAt
-                    ? new Date(conversation.lastMessageAt).toLocaleDateString()
+                  {conversation.lastUpdated
+                    ? new Date(conversation.lastUpdated).toLocaleDateString()
                     : 'Today'}
                 </p>
               </button>
+                )
+              })()
             ))}
           </div>
         )}

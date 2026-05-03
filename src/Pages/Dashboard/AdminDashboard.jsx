@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
+import { useLocation, useNavigate } from 'react-router-dom'
 import Swal from 'sweetalert2'
 import { useAuth } from '../../context/AuthProvider'
+import StartConversationModal from '../../components/StartConversationModal'
+import { FaClock, FaCheckCircle, FaClipboardList, FaDollarSign, FaComments, FaEnvelope, FaUser } from 'react-icons/fa'
 import {
 	addDecoratorManually,
 	approveDecoratorApplication,
@@ -24,7 +27,18 @@ const getDisplayName = (u) => u?.name || u?.displayName || u?.fullName || ''
 
 const AdminDashboard = () => {
 	const { user, role, loading: authLoading } = useAuth()
-	const [activeTab, setActiveTab] = useState('bookings')
+	const location = useLocation()
+	const navigate = useNavigate()
+	const getTabFromSearch = () => {
+		const tab = new URLSearchParams(location.search).get('tab')
+		if (tab === 'overview') return 'overview'
+		if (tab === 'applications') return 'applications'
+		if (tab === 'bookings') return 'bookings'
+		if (tab === 'add-decorator') return 'add-decorator'
+		if (tab === 'messages') return 'messages'
+		return 'overview'
+	}
+	const [activeTab, setActiveTab] = useState(getTabFromSearch)
 
 	// Bookings
 	const [bookingStatus, setBookingStatus] = useState('all')
@@ -50,6 +64,8 @@ const AdminDashboard = () => {
 	const [addEmail, setAddEmail] = useState('')
 	const [addLoading, setAddLoading] = useState(false)
 	const [addMessage, setAddMessage] = useState('')
+	const [chatModalOpen, setChatModalOpen] = useState(false)
+	const [chatTarget, setChatTarget] = useState({ id: '', name: '' })
 
 	useEffect(() => {
 		if (authLoading) return
@@ -61,6 +77,11 @@ const AdminDashboard = () => {
 			.catch((err) => setBookingsError(err?.response?.data?.message || 'Failed to load bookings'))
 			.finally(() => setBookingsLoading(false))
 	}, [authLoading, user, role, bookingStatus])
+
+	useEffect(() => {
+		setActiveTab(getTabFromSearch())
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [location.search])
 
 	const loadApplications = async () => {
 		setAppsLoading(true)
@@ -99,6 +120,16 @@ const AdminDashboard = () => {
 	useEffect(() => {
 		if (authLoading) return
 		if (!user || role !== 'admin') return
+		if (activeTab !== 'messages') return
+		if (decorators.length === 0) {
+			loadDecorators()
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [authLoading, user, role, activeTab])
+
+	useEffect(() => {
+		if (authLoading) return
+		if (!user || role !== 'admin') return
 		if (!assigningBooking) return
 		if (decorators.length > 0) return
 		loadDecorators()
@@ -118,6 +149,25 @@ const AdminDashboard = () => {
 		if (appStatus === 'all') return applications
 		return applications.filter((a) => (a.status || 'pending') === appStatus)
 	}, [applications, appStatus])
+
+	const applicationStats = useMemo(() => {
+		return applications.reduce(
+			(acc, application) => {
+				const status = (application.status || 'pending').toLowerCase()
+				acc.total += 1
+				if (status === 'approved') acc.approved += 1
+				else if (status === 'rejected') acc.rejected += 1
+				else acc.pending += 1
+				return acc
+			},
+			{ total: 0, pending: 0, approved: 0, rejected: 0 },
+		)
+	}, [applications])
+
+	const handleTabChange = (tab) => {
+		setActiveTab(tab)
+		navigate(`/dashboard/admin?tab=${tab}`, { replace: true })
+	}
 
 	const handleApprove = async (application) => {
 		const id = application?._id || application?.id
@@ -183,6 +233,11 @@ const AdminDashboard = () => {
 		}
 	}
 
+	const openChat = (id, name, participantRole = 'decorator') => {
+		setChatTarget({ id, name, participantRole })
+		setChatModalOpen(true)
+	}
+
 	const closeAssign = () => {
 		setAssigningBooking(null)
 		setAssignEmail('')
@@ -246,31 +301,45 @@ const AdminDashboard = () => {
 
 			<div className="tabs tabs-bordered">
 				<button
-					onClick={() => setActiveTab('bookings')}
-					className={`tab ${activeTab === 'bookings' ? 'tab-active' : ''}`}
+					onClick={() => handleTabChange('overview')}
+					className={`tab ${activeTab === 'overview' ? 'tab-active' : ''}`}
 				>
-					Bookings
+					Overview
 				</button>
 				<button
-					onClick={() => setActiveTab('applications')}
+					onClick={() => handleTabChange('applications')}
 					className={`tab ${activeTab === 'applications' ? 'tab-active' : ''}`}
 				>
 					Decorator Applications
 				</button>
 				<button
-					onClick={() => setActiveTab('add-decorator')}
+					onClick={() => handleTabChange('bookings')}
+					className={`tab ${activeTab === 'bookings' ? 'tab-active' : ''}`}
+				>
+					Bookings
+				</button>
+				<button
+					onClick={() => handleTabChange('add-decorator')}
 					className={`tab ${activeTab === 'add-decorator' ? 'tab-active' : ''}`}
 				>
 					Add Decorator
 				</button>
+				<button
+					onClick={() => handleTabChange('messages')}
+					className={`tab ${activeTab === 'messages' ? 'tab-active' : ''}`}
+				>
+					Messages
+				</button>
 			</div>
 
-			{activeTab === 'bookings' && (
+			{(activeTab === 'overview' || activeTab === 'bookings') && (
 				<motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
 					<div className="card bg-base-100 shadow-xl">
 						<div className="card-body gap-4">
 							<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-								<h3 className="text-xl font-bold">All Bookings</h3>
+								<h3 className="text-xl font-bold">
+									{activeTab === 'overview' ? 'Overview' : 'All Bookings'}
+								</h3>
 								<div className="flex items-center gap-3">
 									<label className="text-sm text-base-content/70">Payment status</label>
 									<select
@@ -467,6 +536,33 @@ const AdminDashboard = () => {
 								</div>
 							</div>
 
+							<div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+								<div className="stats shadow bg-base-200">
+									<div className="stat py-4">
+										<div className="stat-title">Total</div>
+										<div className="stat-value text-lg">{applicationStats.total}</div>
+									</div>
+								</div>
+								<div className="stats shadow bg-base-200">
+									<div className="stat py-4">
+										<div className="stat-title">Pending</div>
+										<div className="stat-value text-lg text-warning">{applicationStats.pending}</div>
+									</div>
+								</div>
+								<div className="stats shadow bg-base-200">
+									<div className="stat py-4">
+										<div className="stat-title">Approved</div>
+										<div className="stat-value text-lg text-success">{applicationStats.approved}</div>
+									</div>
+								</div>
+								<div className="stats shadow bg-base-200">
+									<div className="stat py-4">
+										<div className="stat-title">Rejected</div>
+										<div className="stat-value text-lg text-error">{applicationStats.rejected}</div>
+									</div>
+								</div>
+							</div>
+
 							{appsError && (
 								<div className="alert alert-error">
 									<span>{appsError}</span>
@@ -475,6 +571,11 @@ const AdminDashboard = () => {
 							{appsLoading ? (
 								<div className="flex justify-center py-10">
 									<span className="loading loading-spinner loading-lg"></span>
+								</div>
+							) : visibleApplications.length === 0 ? (
+								<div className="rounded-xl border border-dashed border-base-300 p-8 text-center text-base-content/60">
+									<p className="font-semibold text-base-content">No decorator applications found</p>
+									<p className="text-sm mt-1">Try changing the status filter or wait for new submissions.</p>
 								</div>
 							) : (
 								<div className="overflow-x-auto">
@@ -485,6 +586,9 @@ const AdminDashboard = () => {
 												<th>Name</th>
 												<th>Email</th>
 												<th>Phone</th>
+												<th>Experience</th>
+												<th>Portfolio</th>
+												<th>Applied</th>
 												<th>Status</th>
 												<th>Actions</th>
 											</tr>
@@ -493,12 +597,27 @@ const AdminDashboard = () => {
 											{visibleApplications.map((a) => {
 												const id = a._id || a.id
 												const status = a.status || 'pending'
+												const application = a.decoratorApplication || {}
+												const experience = application.experience || a.experience || '—'
+												const portfolio = application.portfolio || a.portfolio || '—'
+												const appliedAt = application.createdAt || application.submittedAt || a.createdAt || a.updatedAt
 												return (
 													<tr key={id}>
 														<td className="font-semibold">{id}</td>
 														<td>{a.name || '—'}</td>
 														<td>{a.email || '—'}</td>
 														<td>{a.phone || '—'}</td>
+														<td>{experience}</td>
+														<td>
+															{portfolio === '—' ? (
+																'—'
+															) : (
+																<a className="link link-primary" href={portfolio} target="_blank" rel="noreferrer">
+																	View
+																</a>
+															)}
+														</td>
+														<td>{appliedAt ? new Date(appliedAt).toLocaleDateString() : '—'}</td>
 														<td>
 															<span
 																className={`badge ${
@@ -576,6 +695,81 @@ const AdminDashboard = () => {
 					</div>
 				</motion.div>
 			)}
+
+			{activeTab === 'messages' && (
+				<motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+					<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+						<div className="card bg-base-100 shadow-xl border border-primary/15">
+							<div className="card-body space-y-4">
+								<div className="flex items-center gap-3">
+									<div className="p-3 rounded-full bg-primary/10 text-primary">
+										<FaComments />
+									</div>
+									<div>
+										<h3 className="text-xl font-bold">Chat with Decorators</h3>
+										<p className="text-sm text-base-content/60">Start a conversation with any decorator</p>
+									</div>
+								</div>
+								{decoratorsLoading ? (
+									<div className="flex justify-center py-6">
+										<span className="loading loading-spinner loading-md text-primary"></span>
+									</div>
+								) : decorators.length === 0 ? (
+									<p className="text-sm text-base-content/50">No decorators found yet.</p>
+								) : (
+									<div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+										{decorators.map((decorator) => {
+											const email = decorator?.email
+											if (!email) return null
+											const key = decorator?._id || email
+											const name = decorator?.name || decorator?.fullName || decorator?.displayName || 'Decorator'
+											return (
+												<div key={key} className="flex items-center justify-between gap-3 rounded-lg border border-base-300 p-3">
+													<div>
+														<p className="font-semibold">{name}</p>
+														<p className="text-xs text-base-content/60">{email}</p>
+													</div>
+													<button
+														type="button"
+														onClick={() => openChat(email, name)}
+														className="btn btn-outline btn-sm gap-2"
+													>
+														<FaComments /> Chat
+													</button>
+												</div>
+											)
+										})}
+									</div>
+								)}
+							</div>
+						</div>
+						<div className="card bg-base-100 shadow-xl border border-secondary/15">
+							<div className="card-body space-y-4">
+								<div className="flex items-center gap-3">
+									<div className="p-3 rounded-full bg-secondary/10 text-secondary">
+										<FaUser />
+									</div>
+									<div>
+										<h3 className="text-xl font-bold">Open Messages</h3>
+										<p className="text-sm text-base-content/60">Use the shared messages page for ongoing chats</p>
+									</div>
+								</div>
+								<button type="button" className="btn btn-primary w-full gap-2" onClick={() => window.location.assign('/dashboard/messages')}>
+									<FaComments /> Go to Messages
+								</button>
+							</div>
+						</div>
+					</div>
+				</motion.div>
+			)}
+
+			<StartConversationModal
+				isOpen={chatModalOpen}
+				onClose={() => setChatModalOpen(false)}
+				participantId={chatTarget.id}
+				participantName={chatTarget.name}
+				participantRole={chatTarget.participantRole}
+			/>
 		</div>
 	)
 }

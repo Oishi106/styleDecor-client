@@ -18,6 +18,7 @@ import PrivateRoutes from './PrivateRoutes'
 import AdminRoute from './AdminRoute'
 import DecoratorRoute from './DecoratorRoute'
 import UserRoute from './UserRoute'
+import ChatRoute from './ChatRoute'
 import Profile from '../Pages/Profile'
 import Auth from '../Pages/Auth'
 import DashboardSelector from '../Pages/DashboardSelector'
@@ -197,9 +198,9 @@ const router = createBrowserRouter([
             {
                 path: 'messages',
                 element: (
-                    <UserRoute>
+                    <ChatRoute>
                         <MessagesPage />
-                    </UserRoute>
+                    </ChatRoute>
                 ),
             },
         ],

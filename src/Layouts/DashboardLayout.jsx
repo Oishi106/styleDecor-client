@@ -48,6 +48,7 @@ const DashboardLayout = () => {
 
 	// Determine role strictly from backend-provided auth state
 	const userRole = role
+	const activeAdminTab = new URLSearchParams(location.search).get('tab') || 'overview'
 
 	// Role-based menu configuration
 	const roleBasedMenus = {
@@ -71,13 +72,13 @@ const DashboardLayout = () => {
 			{
 				title: 'Admin Panel',
 				icon: FaShieldAlt,
-				href: '/dashboard/admin',
+				href: '/dashboard/admin?tab=overview',
 				section: 'admin',
 				items: [
-					{ label: 'Overview', href: '/dashboard/admin' },
-					{ label: 'Decorator Applications', href: '/dashboard/admin' },
-					{ label: 'Bookings', href: '/dashboard/admin' },
-					{ label: 'Add Decorator', href: '/dashboard/admin' },
+					{ label: 'Overview', href: '/dashboard/admin?tab=overview', tab: 'overview' },
+					{ label: 'Decorator Applications', href: '/dashboard/admin?tab=applications', tab: 'applications' },
+					{ label: 'Bookings', href: '/dashboard/admin?tab=bookings', tab: 'bookings' },
+					{ label: 'Add Decorator', href: '/dashboard/admin?tab=add-decorator', tab: 'add-decorator' },
 				],
 			},
 		],
@@ -237,13 +238,13 @@ const DashboardLayout = () => {
 				initial="visible"
 				animate={sidebarOpen || isDesktop ? 'visible' : 'hidden'}
 				transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-				className="fixed lg:static w-64 h-screen bg-linear-to-b from-primary/20 via-neutral to-neutral-900 text-neutral-content flex flex-col z-40 lg:z-auto"
+				className="fixed lg:static w-64 h-screen bg-linear-to-b from-slate-900 via-slate-800 to-cyan-900 text-neutral-content flex flex-col z-40 lg:z-auto"
 			>
 				{/* Sidebar Header */}
 				<div className="p-6 border-b border-neutral-700 flex items-center justify-between">
 					<div className="flex items-center gap-3">
-						<div className="bg-primary p-2 rounded-lg">
-							<span className="text-xl font-bold text-white">🎨</span>
+						<div className="bg-white/10 p-2 rounded-lg">
+							<img src="/logo.png" alt="StyleDecor logo" className="h-12 w-12 object-contain" />
 						</div>
 						<div>
 							<h3 className="font-bold text-lg text-white">StyleDecor</h3>
@@ -371,7 +372,7 @@ const DashboardLayout = () => {
 													to={item.href}
 													onClick={() => setSidebarOpen(false)}
 													className={`block px-3 py-2 rounded text-sm transition-all ${
-														location.pathname === item.href
+														location.pathname === '/dashboard/admin' && activeAdminTab === item.tab
 															? 'bg-primary text-white font-semibold'
 															: 'text-neutral-300 hover:text-white hover:bg-neutral-800'
 													}`}
@@ -464,9 +465,11 @@ const DashboardLayout = () => {
 								title="Notifications"
 							>
 								<FaBell className="text-xl" />
-								<span className="badge badge-sm badge-primary absolute top-0 right-0">
-									3
-								</span>
+								{unreadCount > 0 && (
+									<span className="badge badge-sm badge-primary absolute top-0 right-0">
+										{unreadCount > 99 ? '99+' : unreadCount}
+									</span>
+								)}
 							</motion.button>
 
 							{/* User Profile Avatar */}

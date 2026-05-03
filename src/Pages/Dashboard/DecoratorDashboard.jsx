@@ -2,11 +2,16 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import axiosInstance from '../../api/axiosInstance'
 import { useAuth } from '../../context/AuthProvider'
+import StartConversationModal from '../../components/StartConversationModal'
 import {
 	FaClock,
 	FaCheckCircle,
 	FaClipboardList,
 	FaDollarSign,
+	FaComments,
+	FaUser,
+	FaShieldAlt,
+	FaEnvelope,
 } from 'react-icons/fa'
 
 const DecoratorDashboard = () => {
@@ -15,9 +20,12 @@ const DecoratorDashboard = () => {
 	const [loading, setLoading] = useState(false)
 	const [error, setError] = useState('')
 	const [statusFilter, setStatusFilter] = useState('all')
+	const [chatModalOpen, setChatModalOpen] = useState(false)
+	const [chatTarget, setChatTarget] = useState({ id: '', name: '' })
 
 	const decoratorEmail = user?.email
 	const effectiveRole = (role || user?.role || '').toString().toLowerCase()
+	const adminEmail = import.meta?.env?.VITE_ADMIN_EMAIL || 'admin@styledecor.com'
 
 	useEffect(() => {
 		if (authLoading) return
@@ -125,6 +133,26 @@ const DecoratorDashboard = () => {
 		() => completedJobs.reduce((sum, j) => sum + parseAmount(j.price ?? j.amount), 0),
 		[completedJobs],
 	)
+
+	const userContacts = useMemo(() => {
+		const map = new Map()
+		jobs.forEach((job) => {
+			const email = job.user?.email
+			if (!email) return
+			map.set(email, {
+				id: email,
+				name: job.user?.name || job.user?.displayName || email,
+				email,
+				count: (map.get(email)?.count || 0) + 1,
+			})
+		})
+		return Array.from(map.values()).sort((a, b) => b.count - a.count)
+	}, [jobs])
+
+	const openChat = (id, name, participantRole = 'participant') => {
+		setChatTarget({ id, name, participantRole })
+		setChatModalOpen(true)
+	}
 
 	const setFilter = (filter) => {
 		setStatusFilter(filter)
@@ -240,6 +268,74 @@ const DecoratorDashboard = () => {
 				</div>
 			</motion.div>
 
+			{/* Chat Shortcuts */}
+			<motion.div
+				initial={{ opacity: 0, y: 20 }}
+				animate={{ opacity: 1, y: 0 }}
+				transition={{ delay: 0.15 }}
+				className="grid grid-cols-1 lg:grid-cols-2 gap-4"
+			>
+				<div className="card bg-base-100 shadow-lg border border-primary/15">
+					<div className="card-body space-y-4">
+						<div className="flex items-center gap-3">
+							<div className="p-3 rounded-full bg-primary/10 text-primary">
+								<FaShieldAlt />
+							</div>
+							<div>
+								<h3 className="text-lg font-bold">Chat with Admin</h3>
+								<p className="text-sm text-base-content/60">Send updates, approvals, or support requests</p>
+							</div>
+						</div>
+						<div className="flex items-center gap-2 text-sm text-base-content/70">
+							<FaEnvelope className="text-primary" />
+							<span>{adminEmail}</span>
+						</div>
+						<button
+							type="button"
+							onClick={() => openChat(adminEmail, 'Admin', 'admin')}
+							className="btn btn-primary w-full gap-2"
+						>
+							<FaComments /> Start Admin Chat
+						</button>
+					</div>
+				</div>
+
+				<div className="card bg-base-100 shadow-lg border border-secondary/15">
+					<div className="card-body space-y-4">
+						<div className="flex items-center gap-3">
+							<div className="p-3 rounded-full bg-secondary/10 text-secondary">
+								<FaUser />
+							</div>
+							<div>
+								<h3 className="text-lg font-bold">Chat with Users</h3>
+								<p className="text-sm text-base-content/60">Reach customers from your assigned jobs</p>
+							</div>
+						</div>
+						<div className="max-h-56 overflow-y-auto space-y-2 pr-1">
+							{userContacts.length === 0 ? (
+								<p className="text-sm text-base-content/50">No customer contacts found yet.</p>
+							) : (
+								userContacts.map((contact) => (
+									<div key={contact.id} className="flex items-center justify-between gap-3 rounded-lg border border-base-300 p-3">
+										<div>
+											<p className="font-semibold">{contact.name}</p>
+											<p className="text-xs text-base-content/60">{contact.email}</p>
+										</div>
+										<button
+											type="button"
+											onClick={() => openChat(contact.id, contact.name, 'user')}
+											className="btn btn-outline btn-sm gap-2"
+										>
+											<FaComments /> Chat
+										</button>
+									</div>
+								))
+							)}
+						</div>
+					</div>
+				</div>
+			</motion.div>
+
 			{/* My Jobs */}
 			<motion.div
 				initial={{ opacity: 0, y: 20 }}
@@ -337,6 +433,14 @@ const DecoratorDashboard = () => {
 					</AnimatePresence>
 				</div>
 			</motion.div>
+
+			<StartConversationModal
+				isOpen={chatModalOpen}
+				onClose={() => setChatModalOpen(false)}
+				participantId={chatTarget.id}
+				participantName={chatTarget.name}
+				participantRole={chatTarget.participantRole}
+			/>
 		</div>
 	)
 }

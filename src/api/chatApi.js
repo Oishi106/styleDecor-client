@@ -10,10 +10,10 @@ export const getConversations = async () => {
   }
 }
 
-// Get messages for a specific conversation
-export const getMessages = async (conversationId) => {
+// Get a single conversation (with messages)
+export const getConversation = async (conversationId) => {
   try {
-    const response = await axiosInstance.get(`/chat/conversations/${conversationId}/messages`)
+    const response = await axiosInstance.get(`/chat/conversations/${conversationId}`)
     return response.data
   } catch (error) {
     throw error.response?.data || error.message
@@ -30,11 +30,21 @@ export const sendMessage = async (conversationId, messageData) => {
   }
 }
 
-// Start a new conversation with a decorator
-export const startConversation = async (decoratorId) => {
+// Start a new conversation with any participant (decorator/admin/user)
+export const startConversation = async (participantId, participantName = 'Participant') => {
   try {
     const response = await axiosInstance.post('/chat/conversations/start', {
-      decoratorId
+      // Backward compatible keys
+      decoratorId: participantId,
+      decoratorName: participantName,
+      // Generic keys for admin/decorator/user chat
+      participantId,
+      participantName,
+      participantEmail: participantId,
+      recipientEmail: participantId,
+      recipientName: participantName,
+      targetEmail: participantId,
+      targetName: participantName,
     })
     return response.data
   } catch (error) {
@@ -56,16 +66,6 @@ export const markMessagesAsRead = async (conversationId) => {
 export const deleteConversation = async (conversationId) => {
   try {
     const response = await axiosInstance.delete(`/chat/conversations/${conversationId}`)
-    return response.data
-  } catch (error) {
-    throw error.response?.data || error.message
-  }
-}
-
-// Get conversation by decorator ID
-export const getConversationByDecoratorId = async (decoratorId) => {
-  try {
-    const response = await axiosInstance.get(`/chat/conversations/decorator/${decoratorId}`)
     return response.data
   } catch (error) {
     throw error.response?.data || error.message

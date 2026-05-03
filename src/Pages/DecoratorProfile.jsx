@@ -1,13 +1,15 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { FaStar, FaMapMarkerAlt, FaBriefcase, FaArrowLeft } from 'react-icons/fa'
+import { FaStar, FaMapMarkerAlt, FaBriefcase, FaArrowLeft, FaComments } from 'react-icons/fa'
+import StartConversationModal from '../components/StartConversationModal'
 
 const DecoratorProfile = () => {
   const location = useLocation()
   const navigate = useNavigate()
   const { id } = useParams()
   const decorator = location.state?.decorator
+  const [isChatOpen, setIsChatOpen] = useState(false)
 
   if (!decorator) {
     return (
@@ -62,6 +64,14 @@ const DecoratorProfile = () => {
               <div className="mt-4 text-sm font-semibold text-base-content">
                 {decorator.experience || 'Experienced professional'}
               </div>
+
+              <button
+                type="button"
+                onClick={() => setIsChatOpen(true)}
+                className="btn btn-primary gap-2 mt-6"
+              >
+                <FaComments /> Chat with Decorator
+              </button>
             </div>
 
             <div className="lg:col-span-2 p-8 space-y-6">
@@ -104,6 +114,13 @@ const DecoratorProfile = () => {
           </div>
         </motion.div>
       </div>
+
+      <StartConversationModal
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        decoratorId={decorator.email || decorator.id || id || ''}
+        decoratorName={decorator.name || 'Decorator'}
+      />
     </div>
   )
 }
