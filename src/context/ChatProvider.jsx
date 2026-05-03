@@ -1,6 +1,6 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import * as chatApi from '../api/chatApi'
-import Swal from 'sweetalert2'
 import { getConversationId, resolveConversationPeer } from '../utils/chatUtils'
 
 const ChatContext = createContext()
@@ -20,27 +20,14 @@ export const ChatProvider = ({ children }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [unreadCount, setUnreadCount] = useState(0)
-  const previousUnreadCountRef = useRef(0)
 
-  const extractConversationFromResponse = useCallback((payload) => {
-    if (!payload) return null
-    if (payload?.data?.conversation && typeof payload.data.conversation === 'object') return payload.data.conversation
-    if (payload?.data && typeof payload.data === 'object') return payload.data
-    if (payload?.conversation && typeof payload.conversation === 'object') return payload.conversation
-    if (typeof payload === 'object') return payload
-    return null
-  }, [])
+  // ✅ ref দিয়ে currentConversation track করো — useEffect dependency থেকে বাদ
+  const currentConversationRef = useRef(null)
+  useEffect(() => {
+    currentConversationRef.current = currentConversation
+  }, [currentConversation])
 
-  const extractMessageFromResponse = useCallback((payload) => {
-    if (!payload) return null
-    if (payload?.data?.message && typeof payload.data.message === 'object') return payload.data.message
-    if (payload?.message && typeof payload.message === 'object') return payload.message
-    if (payload?.data && typeof payload.data === 'object' && !Array.isArray(payload.data)) return payload.data
-    if (typeof payload === 'object' && !Array.isArray(payload)) return payload
-    return null
-  }, [])
-
-  // Fetch all conversations
+  // ✅ Fetch all conversations
   const fetchConversations = useCallback(async (options = {}) => {
     const { silent = false } = options
     try {
@@ -49,149 +36,108 @@ export const ChatProvider = ({ children }) => {
       const data = await chatApi.getConversations()
       const conversationList = Array.isArray(data) ? data : []
       setConversations(conversationList)
-      
-      // Count total unread messages
-      const count = conversationList.reduce((sum, conv) => {
-        return sum + (conv.unreadCount || 0)
-      }, 0)
-      setUnreadCount(count)
 
-      // Show notification if new conversation with unread messages
-      conversationList.forEach(conv => {
-        if (conv.unreadCount > 0) {
-          const senderName = resolveConversationPeer(conv).name || 'Someone'
-          // Only show if this is a new conversation (check localStorage)
-          const seenConversations = JSON.parse(localStorage.getItem('seenConversations') || '{}')
-          const conversationId = getConversationId(conv)
-          if (!conversationId) return
-          if (!seenConversations[conversationId]) {
-            seenConversations[conversationId] = true
-            localStorage.setItem('seenConversations', JSON.stringify(seenConversations))
-            
-            Swal.fire({
-              icon: 'info',
-              title: 'New Message',
-              text: `${senderName} sent you a message`,
-              position: 'top-end',
-              toast: true,
-              showConfirmButton: false,
-              timer: 3000,
-              timerProgressBar: true,
-              didOpen: (toast) => {
-                toast.addEventListener('mouseenter', Swal.stopTimer)
-                toast.addEventListener('mouseleave', Swal.resumeTimer)
-              }
-            })
-          }
-        }
-      })
+      const count = conversationList.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0)
+      setUnreadCount(count)
     } catch (err) {
-      setError(err?.message || 'Failed to fetch conversations')
+      if (!silent) setError(err?.message || 'Failed to fetch conversations')
       setConversations([])
     } finally {
       if (!silent) setLoading(false)
     }
   }, [])
 
-  // Fetch a specific conversation from the conversations list.
-  // The backend exposes /chat/conversations but not a single-conversation GET route.
+  // ✅ Fetch single conversation detail
   const fetchConversationDetail = useCallback(async (conversationId, options = {}) => {
     const { silent = false } = options
+    if (!conversationId) return
     try {
       if (!silent) setLoading(true)
       setError(null)
 
       let conversation = null
       try {
-        const detail = await chatApi.getConversation(conversationId)
-        conversation = extractConversationFromResponse(detail)
+        conversation = await chatApi.getConversation(conversationId)
       } catch {
+        // fallback: list থেকে খোঁজো
         const data = await chatApi.getConversations()
-        const conversationList = Array.isArray(data) ? data : []
-        conversation = conversationList.find((item) => getConversationId(item) === conversationId) || null
+        const list = Array.isArray(data) ? data : []
+        conversation = list.find((item) => getConversationId(item) === conversationId) || null
       }
 
-      if (!conversation) {
-        throw new Error('Conversation not found')
-      }
+      if (!conversation) throw new Error('Conversation not found')
 
-      if (!silent || getConversationId(currentConversation) !== conversationId) {
-        setCurrentConversation(conversation)
-      }
+      setCurrentConversation(conversation)
       setMessages(Array.isArray(conversation.messages) ? conversation.messages : [])
-      
+
       // Mark as read
       if ((conversation.unreadCount || 0) > 0) {
-        await chatApi.markMessagesAsRead(conversationId)
+        try {
+          await chatApi.markMessagesAsRead(conversationId)
+        } catch { /* ignore */ }
       }
-      
-      // Update conversations list to remove unread badge
-      setConversations(prev => 
-        prev.map(conv => 
-          getConversationId(conv) === conversationId 
+
+      // conversations list এ unread badge সরাও
+      setConversations(prev =>
+        prev.map(conv =>
+          getConversationId(conv) === conversationId
             ? { ...conv, unreadCount: 0 }
             : conv
         )
       )
     } catch (err) {
-      setError(err?.message || 'Failed to fetch conversation')
+      if (!silent) setError(err?.message || 'Failed to fetch conversation')
       setMessages([])
     } finally {
       if (!silent) setLoading(false)
     }
-  }, [extractConversationFromResponse, currentConversation])
+  }, [])
 
-  // Send a message
+  // ✅ Send message
   const sendNewMessage = useCallback(async (conversationId, text, senderEmail = '') => {
     try {
       setError(null)
       const response = await chatApi.sendMessage(conversationId, { text })
-      const message = extractMessageFromResponse(response) || {}
 
       const normalizedMessage = {
-        ...message,
-        text: message.text || text,
-        sender: message.sender || message.senderEmail || senderEmail || '',
-        timestamp: message.timestamp || message.createdAt || new Date().toISOString(),
+        text: response?.text || text,
+        sender: response?.sender || senderEmail,
+        timestamp: response?.timestamp || new Date().toISOString(),
+        _id: response?._id,
       }
-      
-      // Add message to local state
+
       setMessages(prev => [...prev, normalizedMessage])
-      
-      // Update conversation last message
+
       setConversations(prev =>
         prev.map(conv =>
           getConversationId(conv) === conversationId
-            ? { 
-                ...conv, 
+            ? {
+                ...conv,
                 lastUpdated: new Date(),
                 messages: [...(conv.messages || []), normalizedMessage]
               }
             : conv
         )
       )
-      
+
       return normalizedMessage
     } catch (err) {
       setError(err?.message || 'Failed to send message')
       throw err
     }
-  }, [extractMessageFromResponse])
+  }, [])
 
-  // Start a new conversation
+  // ✅ Start new conversation
   const startNewConversation = useCallback(async (participantId, participantName = 'Participant') => {
     try {
       setError(null)
-      const response = await chatApi.startConversation(participantId, participantName)
-      const conversation = extractConversationFromResponse(response)
-      if (!conversation) {
-        throw new Error('Conversation could not be created')
-      }
-      const newConversationId = getConversationId(conversation)
+      const conversation = await chatApi.startConversation(participantId, participantName)
+      if (!conversation) throw new Error('Conversation could not be created')
+
+      const newId = getConversationId(conversation)
       setConversations(prev => {
-        const exists = prev.some((conv) => getConversationId(conv) === newConversationId)
-        if (exists) return prev
-        return [conversation, ...prev]
+        const exists = prev.some(c => getConversationId(c) === newId)
+        return exists ? prev : [conversation, ...prev]
       })
       setCurrentConversation(conversation)
       setMessages(Array.isArray(conversation.messages) ? conversation.messages : [])
@@ -202,51 +148,45 @@ export const ChatProvider = ({ children }) => {
     }
   }, [])
 
-  // Get or create conversation with decorator
+  // ✅ Get or create conversation
   const getOrCreateConversation = useCallback(async (participantId, participantName = 'Participant') => {
     try {
       setError(null)
       const normalizedTarget = String(participantId || '').toLowerCase().trim()
-      const existing = conversations.find((conv) => {
-        const peer = resolveConversationPeer(conv)
-        const peerEmail = String(peer?.email || '').toLowerCase()
-        if (peerEmail && normalizedTarget) return peerEmail === normalizedTarget
+
+      const existing = conversations.find(conv => {
         if (Array.isArray(conv?.participants)) {
-          return conv.participants.some((p) => {
+          return conv.participants.some(p => {
             if (typeof p === 'string') return p.toLowerCase() === normalizedTarget
             if (p && typeof p === 'object') {
-              const email = String(p.email || p.userEmail || '').toLowerCase()
-              const id = String(p.id || p._id || '').toLowerCase()
-              return email === normalizedTarget || id === normalizedTarget
+              return String(p.email || '').toLowerCase() === normalizedTarget
             }
             return false
           })
         }
         return false
       })
-      if (existing) {
-        return existing
-      }
-      const response = await chatApi.startConversation(participantId, participantName)
-      const conversation = extractConversationFromResponse(response)
-      if (!conversation) {
-        throw new Error('Conversation could not be created')
-      }
+
+      if (existing) return existing
+
+      const conversation = await chatApi.startConversation(participantId, participantName)
+      if (!conversation) throw new Error('Conversation could not be created')
+
       setConversations(prev => [conversation, ...prev])
       return conversation
     } catch (err) {
       setError(err?.message || 'Failed to get or create conversation')
       throw err
     }
-  }, [conversations, extractConversationFromResponse])
+  }, [conversations])
 
-  // Delete conversation
+  // ✅ Delete conversation
   const deleteConvConversation = useCallback(async (conversationId) => {
     try {
       setError(null)
       await chatApi.deleteConversation(conversationId)
-      setConversations(prev => prev.filter(conv => getConversationId(conv) !== conversationId))
-      if (getConversationId(currentConversation) === conversationId) {
+      setConversations(prev => prev.filter(c => getConversationId(c) !== conversationId))
+      if (getConversationId(currentConversationRef.current) === conversationId) {
         setCurrentConversation(null)
         setMessages([])
       }
@@ -254,62 +194,30 @@ export const ChatProvider = ({ children }) => {
       setError(err?.message || 'Failed to delete conversation')
       throw err
     }
-  }, [currentConversation])
-
-  // Initial fetch on mount - do this once with empty dependency array
-  useEffect(() => {
-    let mounted = true
-    const initFetch = async () => {
-      if (mounted) {
-        await fetchConversations({ silent: false })
-      }
-    }
-    initFetch()
-    return () => { mounted = false }
   }, [])
 
-  // Background refresh for conversation list every 10 seconds
+  // ✅ Initial fetch — একবারই চলবে
   useEffect(() => {
-    const listRefresh = setInterval(() => {
-      fetchConversations({ silent: true })
-    }, 10000)
+    fetchConversations()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-    return () => clearInterval(listRefresh)
-  }, [])
-
-  // Poll active conversation messages without reloading full page state
+  // ✅ Background refresh — 15 seconds — silent
   useEffect(() => {
-    const activeConversationId = getConversationId(currentConversation)
-    if (!activeConversationId) return
-
     const interval = setInterval(() => {
-      fetchConversationDetail(activeConversationId, { silent: true })
-    }, 4000)
-
+      fetchConversations({ silent: true })
+    }, 15000)
     return () => clearInterval(interval)
-  }, [currentConversation, fetchConversationDetail, getConversationId])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Show notification when new messages arrive
+  // ✅ Active conversation polling — ref দিয়ে করছি তাই infinite loop নেই
   useEffect(() => {
-    if (unreadCount > previousUnreadCountRef.current && previousUnreadCountRef.current > 0) {
-      const newMessageCount = unreadCount - previousUnreadCountRef.current
-      Swal.fire({
-        icon: 'info',
-        title: 'New Message',
-        text: `${newMessageCount} new message${newMessageCount > 1 ? 's' : ''} received`,
-        position: 'top-end',
-        toast: true,
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true,
-        didOpen: (toast) => {
-          toast.addEventListener('mouseenter', Swal.stopTimer)
-          toast.addEventListener('mouseleave', Swal.resumeTimer)
-        }
-      })
-    }
-    previousUnreadCountRef.current = unreadCount
-  }, [unreadCount])
+    const interval = setInterval(() => {
+      const activeId = getConversationId(currentConversationRef.current)
+      if (!activeId) return
+      fetchConversationDetail(activeId, { silent: true })
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [fetchConversationDetail])
 
   const value = {
     conversations,
@@ -334,3 +242,4 @@ export const ChatProvider = ({ children }) => {
   )
 }
 
+export default ChatProvider
