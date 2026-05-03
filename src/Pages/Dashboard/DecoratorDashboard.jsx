@@ -282,7 +282,7 @@ const DecoratorDashboard = () => {
 								<FaShieldAlt />
 							</div>
 							<div>
-								<h3 className="text-lg font-bold">Chat with Admin</h3>
+								<h3 className="text-lg font-bold">Chat with Admin and Users</h3>
 								<p className="text-sm text-base-content/60">Send updates, approvals, or support requests</p>
 							</div>
 						</div>
@@ -295,7 +295,7 @@ const DecoratorDashboard = () => {
 							onClick={() => openChat(adminEmail, 'Admin', 'admin')}
 							className="btn btn-primary w-full gap-2"
 						>
-							<FaComments /> Start Admin Chat
+							<FaComments /> Start Admin and Users Chat
 						</button>
 					</div>
 				</div>
