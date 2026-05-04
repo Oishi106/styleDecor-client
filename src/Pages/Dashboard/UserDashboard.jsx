@@ -7,7 +7,7 @@ import { FaChartLine, FaCalendarCheck, FaHeart, FaCreditCard, FaUser, FaClipboar
 import axiosInstance from '../../api/axiosInstance'
 import { useAuth } from '../../context/AuthProvider'
 import ChatList from '../../components/ChatList'
-import { useChat } from '../../context/ChatProvider'
+import { useChat } from '../../context/chatContext'
 
 const UserDashboard = () => {
 	

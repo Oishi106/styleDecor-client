@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { FaComments } from 'react-icons/fa'
-import { useChat } from '../context/ChatProvider'
+import { useChat } from '../context/chatContext'
 import { useAuth } from '../context/AuthProvider'
 import Chat from './Chat'
 import { getConversationId, getMessageText, resolveConversationPeer } from '../utils/chatUtils'

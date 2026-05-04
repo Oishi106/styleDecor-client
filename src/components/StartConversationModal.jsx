@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { FaComments, FaTimes, FaSearch, FaUser } from 'react-icons/fa'
-import { useChat } from '../context/ChatProvider'
+import { useChat } from '../context/chatContext'
 import { useAuth } from '../context/AuthProvider'
 import axiosInstance from '../api/axiosInstance'
 

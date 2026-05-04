@@ -1,17 +1,7 @@
-/* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import * as chatApi from '../api/chatApi'
-import { getConversationId, resolveConversationPeer } from '../utils/chatUtils'
-
-const ChatContext = createContext()
-
-export const useChat = () => {
-  const context = useContext(ChatContext)
-  if (!context) {
-    throw new Error('useChat must be used within ChatProvider')
-  }
-  return context
-}
+import { getConversationId } from '../utils/chatUtils'
+import { ChatContext } from './chatContext'
 
 export const ChatProvider = ({ children }) => {
   const [conversations, setConversations] = useState([])
@@ -21,13 +11,37 @@ export const ChatProvider = ({ children }) => {
   const [error, setError] = useState(null)
   const [unreadCount, setUnreadCount] = useState(0)
 
-  // ✅ ref দিয়ে currentConversation track করো — useEffect dependency থেকে বাদ
   const currentConversationRef = useRef(null)
+  const prevUnreadRef = useRef(0)
+
   useEffect(() => {
     currentConversationRef.current = currentConversation
   }, [currentConversation])
 
-  // ✅ Fetch all conversations
+  // ✅ Browser notification permission চাও
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
+  }, [])
+
+  // ✅ unreadCount বাড়লে notification দেখাও
+  useEffect(() => {
+    if (unreadCount > prevUnreadRef.current && prevUnreadRef.current >= 0) {
+      const newCount = unreadCount - prevUnreadRef.current
+
+      // Browser notification
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('New Message - StyleDecor', {
+          body: `You have ${newCount} new message${newCount > 1 ? 's' : ''}`,
+          icon: '/logo.png'
+        })
+      }
+    }
+    prevUnreadRef.current = unreadCount
+  }, [unreadCount])
+
+  // Fetch all conversations
   const fetchConversations = useCallback(async (options = {}) => {
     const { silent = false } = options
     try {
@@ -47,7 +61,7 @@ export const ChatProvider = ({ children }) => {
     }
   }, [])
 
-  // ✅ Fetch single conversation detail
+  // Fetch single conversation
   const fetchConversationDetail = useCallback(async (conversationId, options = {}) => {
     const { silent = false } = options
     if (!conversationId) return
@@ -59,10 +73,9 @@ export const ChatProvider = ({ children }) => {
       try {
         conversation = await chatApi.getConversation(conversationId)
       } catch {
-        // fallback: list থেকে খোঁজো
         const data = await chatApi.getConversations()
         const list = Array.isArray(data) ? data : []
-        conversation = list.find((item) => getConversationId(item) === conversationId) || null
+        conversation = list.find(item => getConversationId(item) === conversationId) || null
       }
 
       if (!conversation) throw new Error('Conversation not found')
@@ -70,14 +83,14 @@ export const ChatProvider = ({ children }) => {
       setCurrentConversation(conversation)
       setMessages(Array.isArray(conversation.messages) ? conversation.messages : [])
 
-      // Mark as read
       if ((conversation.unreadCount || 0) > 0) {
         try {
           await chatApi.markMessagesAsRead(conversationId)
-        } catch { /* ignore */ }
+        } catch {
+          // ignore read-status update errors
+        }
       }
 
-      // conversations list এ unread badge সরাও
       setConversations(prev =>
         prev.map(conv =>
           getConversationId(conv) === conversationId
@@ -93,7 +106,7 @@ export const ChatProvider = ({ children }) => {
     }
   }, [])
 
-  // ✅ Send message
+  // Send message
   const sendNewMessage = useCallback(async (conversationId, text, senderEmail = '') => {
     try {
       setError(null)
@@ -107,7 +120,6 @@ export const ChatProvider = ({ children }) => {
       }
 
       setMessages(prev => [...prev, normalizedMessage])
-
       setConversations(prev =>
         prev.map(conv =>
           getConversationId(conv) === conversationId
@@ -127,7 +139,7 @@ export const ChatProvider = ({ children }) => {
     }
   }, [])
 
-  // ✅ Start new conversation
+  // Start new conversation
   const startNewConversation = useCallback(async (participantId, participantName = 'Participant') => {
     try {
       setError(null)
@@ -148,7 +160,7 @@ export const ChatProvider = ({ children }) => {
     }
   }, [])
 
-  // ✅ Get or create conversation
+  // Get or create conversation
   const getOrCreateConversation = useCallback(async (participantId, participantName = 'Participant') => {
     try {
       setError(null)
@@ -158,9 +170,7 @@ export const ChatProvider = ({ children }) => {
         if (Array.isArray(conv?.participants)) {
           return conv.participants.some(p => {
             if (typeof p === 'string') return p.toLowerCase() === normalizedTarget
-            if (p && typeof p === 'object') {
-              return String(p.email || '').toLowerCase() === normalizedTarget
-            }
+            if (p && typeof p === 'object') return String(p.email || '').toLowerCase() === normalizedTarget
             return false
           })
         }
@@ -180,7 +190,7 @@ export const ChatProvider = ({ children }) => {
     }
   }, [conversations])
 
-  // ✅ Delete conversation
+  // Delete conversation
   const deleteConvConversation = useCallback(async (conversationId) => {
     try {
       setError(null)
@@ -196,26 +206,26 @@ export const ChatProvider = ({ children }) => {
     }
   }, [])
 
-  // ✅ Initial fetch — একবারই চলবে
+  // ✅ Initial fetch
   useEffect(() => {
     fetchConversations()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ✅ Background refresh — 15 seconds — silent
+  // ✅ Background refresh — 5 seconds এ (notification এর জন্য)
   useEffect(() => {
     const interval = setInterval(() => {
       fetchConversations({ silent: true })
-    }, 15000)
+    }, 5000)
     return () => clearInterval(interval)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ✅ Active conversation polling — ref দিয়ে করছি তাই infinite loop নেই
+  // ✅ Active conversation polling — 3 seconds এ
   useEffect(() => {
     const interval = setInterval(() => {
       const activeId = getConversationId(currentConversationRef.current)
       if (!activeId) return
       fetchConversationDetail(activeId, { silent: true })
-    }, 5000)
+    }, 3000)
     return () => clearInterval(interval)
   }, [fetchConversationDetail])
 

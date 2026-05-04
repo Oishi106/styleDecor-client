@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { FaPaperPlane, FaArrowLeft, FaTrash } from 'react-icons/fa'
 import { useAuth } from '../context/AuthProvider'
-import { useChat } from '../context/ChatProvider'
+import { useChat } from '../context/chatContext'
 import { getMessageSender, getMessageText, getMessageTimestamp, resolveConversationPeer } from '../utils/chatUtils'
 
 const Chat = ({ conversationId, onBack }) => {
