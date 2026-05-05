@@ -9,7 +9,7 @@ export const getAdminBookings = async (status = 'all') => {
 }
 
 // Admin: decorator applications
-export const getDecoratorApplications = async () => {
+export const getDecoratorApplications = async () => {               
   // Backend may store applications on user documents (decoratorApplication).
   // Prefer deriving from /users to avoid hitting non-existent admin routes.
   try {
