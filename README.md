@@ -4,7 +4,7 @@ A full-stack MERN-based appointment and service management platform for home and
 
 ---
 
-## 🌐 Live Site : https://your-live-client-url.com
+## 🌐 Live Site : https://luxury-flan-e90d84.netlify.app/
 🎯 Admin id : rohan123@gmail.com
 🎯 Admin password : 123456
 
