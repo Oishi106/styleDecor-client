@@ -5,12 +5,13 @@ import DecoratorCard from '../../components/DecoratorCard';
 
 const MyFavourites = () => {
   const { favorites, loading } = useFavorites();
+  const visibleFavorites = favorites.filter((favorite) => favorite?.name !== 'Ayesha Rahman');
 
   if (loading) {
     return <div className="p-6 text-center text-xl">Loading your favourites...</div>;
   }
 
-  if (!favorites || favorites.length === 0) {
+  if (!visibleFavorites || visibleFavorites.length === 0) {
     return (
       <div className="p-6">
         <h2 className="text-2xl font-bold">My Favourites</h2>
@@ -21,9 +22,9 @@ const MyFavourites = () => {
 
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold mb-6">My Favourites ({favorites.length})</h2>
+      <h2 className="text-2xl font-bold mb-6">My Favourites ({visibleFavorites.length})</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {favorites.map((f) => (
+        {visibleFavorites.map((f) => (
           <div key={f._id || f.id || f.itemId || f.serviceId} className="w-full">
             {f.itemType === 'decorator' ? (
               <DecoratorCard
