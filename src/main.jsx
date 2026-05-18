@@ -11,7 +11,7 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <AuthProvider>
       <FavoritesProvider>
-        <ChatProvider>
+        <ChatProvider>                       
           <RouterProvider router={router} />
         </ChatProvider>
       </FavoritesProvider>
